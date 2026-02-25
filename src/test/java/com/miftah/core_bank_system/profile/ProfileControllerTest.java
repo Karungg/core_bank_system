@@ -12,8 +12,10 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import java.util.Locale;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -50,6 +52,13 @@ public class ProfileControllerTest {
 
         @Autowired
         private ObjectMapper objectMapper;
+
+        @Autowired
+        private MessageSource messageSource;
+
+        private String getMessage(String code) {
+                return messageSource.getMessage(code, null, Locale.getDefault());
+        }
 
         private String token;
 
@@ -94,6 +103,7 @@ public class ProfileControllerTest {
                                 .content(objectMapper.writeValueAsString(request)))
                                 .andExpect(status().isCreated())
                                 .andExpect(jsonPath("$.code").value(201))
+                                .andExpect(jsonPath("$.message").value(getMessage("success.create")))
                                 .andExpect(jsonPath("$.data.identityNumber").value(request.getIdentityNumber()));
         }
 
@@ -138,10 +148,13 @@ public class ProfileControllerTest {
                                 .content(objectMapper.writeValueAsString(request)))
                                 .andExpect(status().isBadRequest())
                                 .andExpect(jsonPath("$.code").value(400))
+                                .andExpect(jsonPath("$.message").value(getMessage("error.validation")))
                                 .andExpect(jsonPath("$.errors").value(
-                                                containsString("identityNumber: Identity number already exists")))
+                                                containsString("identityNumber: " + getMessage(
+                                                                "error.profile.identityNumber.duplicate"))))
                                 .andExpect(jsonPath("$.errors")
-                                                .value(containsString("phone: Phone number already exists")));
+                                                .value(containsString("phone: "
+                                                                + getMessage("error.profile.phone.duplicate"))));
         }
 
         @Test
@@ -169,6 +182,8 @@ public class ProfileControllerTest {
                 mockMvc.perform(get("/api/profiles")
                                 .header("Authorization", "Bearer " + token))
                                 .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.code").value(200))
+                                .andExpect(jsonPath("$.message").value(getMessage("success.get")))
                                 .andExpect(jsonPath("$.data.identityNumber").value(request.getIdentityNumber()));
         }
 
@@ -208,7 +223,8 @@ public class ProfileControllerTest {
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request)))
                                 .andExpect(status().isOk())
-                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.code").value(200))
+                                .andExpect(jsonPath("$.message").value(getMessage("success.update")))
                                 .andExpect(jsonPath("$.data.name").value("Jane Doe"));
         }
 
@@ -240,6 +256,7 @@ public class ProfileControllerTest {
                                 .param("size", "10"))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.code").value(200))
+                                .andExpect(jsonPath("$.message").value(getMessage("success.get")))
                                 .andExpect(jsonPath("$.data.content").isArray())
                                 .andExpect(jsonPath("$.data.totalElements")
                                                 .value(greaterThanOrEqualTo(1)));
@@ -280,6 +297,7 @@ public class ProfileControllerTest {
                                 .header("Authorization", "Bearer " + token))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.code").value(200))
+                                .andExpect(jsonPath("$.message").value(getMessage("success.get")))
                                 .andExpect(jsonPath("$.data.identityNumber").value(request.getIdentityNumber()));
         }
 }

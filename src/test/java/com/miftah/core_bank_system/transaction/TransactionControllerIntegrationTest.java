@@ -23,7 +23,9 @@ import tools.jackson.databind.ObjectMapper;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Locale;
 import java.util.UUID;
+import org.springframework.context.MessageSource;
 
 import static org.hamcrest.Matchers.is;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -54,6 +56,13 @@ public class TransactionControllerIntegrationTest {
 
         @Autowired
         private ObjectMapper objectMapper;
+
+        @Autowired
+        private MessageSource messageSource;
+
+        private String getMessage(String code) {
+                return messageSource.getMessage(code, null, Locale.getDefault());
+        }
 
         private User user1;
         private User user2;
@@ -124,6 +133,7 @@ public class TransactionControllerIntegrationTest {
                                 .content(objectMapper.writeValueAsString(request)))
                                 .andExpect(status().isCreated())
                                 .andExpect(jsonPath("$.code", is(201)))
+                                .andExpect(jsonPath("$.message", is(getMessage("success.create"))))
                                 .andExpect(jsonPath("$.data.amount", is(100)))
                                 .andExpect(jsonPath("$.data.fromAccountId", is(account1.getId().toString())))
                                 .andExpect(jsonPath("$.data.toAccountId", is(account2.getId().toString())));

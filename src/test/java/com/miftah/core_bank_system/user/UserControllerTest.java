@@ -17,8 +17,10 @@ import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.context.MessageSource;
 
 import java.time.LocalDate;
+import java.util.Locale;
 
 import tools.jackson.databind.ObjectMapper;
 
@@ -54,6 +56,13 @@ public class UserControllerTest {
         @Autowired
         private ObjectMapper objectMapper;
 
+        @Autowired
+        private MessageSource messageSource;
+
+        private String getMessage(String code) {
+                return messageSource.getMessage(code, null, Locale.getDefault());
+        }
+
         @BeforeEach
         void setUp() {
                 accountRepository.deleteAll();
@@ -73,6 +82,7 @@ public class UserControllerTest {
                                 .content(objectMapper.writeValueAsString(request)))
                                 .andExpect(status().isCreated())
                                 .andExpect(jsonPath("$.code", is(201)))
+                                .andExpect(jsonPath("$.message", is(getMessage("success.create"))))
                                 .andExpect(jsonPath("$.data.username", is("admin")))
                                 .andExpect(jsonPath("$.data.role", is("ADMIN")));
 
@@ -124,6 +134,7 @@ public class UserControllerTest {
                                 .content(objectMapper.writeValueAsString(request)))
                                 .andExpect(status().isCreated())
                                 .andExpect(jsonPath("$.code", is(201)))
+                                .andExpect(jsonPath("$.message", is(getMessage("success.create"))))
                                 .andExpect(jsonPath("$.data.username", is("newuser")))
                                 .andExpect(jsonPath("$.data.role", is("USER")));
 
@@ -179,6 +190,7 @@ public class UserControllerTest {
                                 .content(objectMapper.writeValueAsString(request)))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.code", is(200)))
+                                .andExpect(jsonPath("$.message", is(getMessage("success.update"))))
                                 .andExpect(jsonPath("$.data.username", is("newadminname")));
 
                 User updatedUser = userRepository.findById(admin.getId()).orElseThrow();
@@ -193,7 +205,8 @@ public class UserControllerTest {
 
                 mockMvc.perform(delete("/api/users/admin/" + admin.getId()))
                                 .andExpect(status().isOk())
-                                .andExpect(jsonPath("$.code", is(200)));
+                                .andExpect(jsonPath("$.code", is(200)))
+                                .andExpect(jsonPath("$.message", is(getMessage("success.delete"))));
 
                 assertTrue(userRepository.findById(admin.getId()).isEmpty());
         }
@@ -208,6 +221,7 @@ public class UserControllerTest {
                                 .param("size", "10"))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.code", is(200)))
+                                .andExpect(jsonPath("$.message", is(getMessage("success.get"))))
                                 .andExpect(jsonPath("$.data.content").isArray())
                                 .andExpect(jsonPath("$.data.totalElements")
                                                 .value(greaterThanOrEqualTo(2)));
@@ -221,6 +235,7 @@ public class UserControllerTest {
                 mockMvc.perform(get("/api/users/" + user.getId()))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.code", is(200)))
+                                .andExpect(jsonPath("$.message", is(getMessage("success.get"))))
                                 .andExpect(jsonPath("$.data.username", is("targetuser")));
         }
 }
