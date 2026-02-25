@@ -9,9 +9,9 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.miftah</groupId>
-	<artifactId>mini_core_bank_system</artifactId>
+	<artifactId>core_bank_system</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>mini_core_bank_system</name>
+	<name>core_bank_system</name>
 	<description>Demo project for Spring Boot</description>
 	<url/>
 	<licenses>
@@ -212,7 +212,7 @@
 				<configuration>
 					<user>root</user>
 					<password>password</password>
-					<url>jdbc:postgresql://localhost:5432/mini_core_bank_system</url>
+					<url>jdbc:postgresql://localhost:5432/core_bank_system</url>
 					<cleanDisabled>false</cleanDisabled>
 				</configuration>
 			</plugin>

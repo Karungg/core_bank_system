@@ -1,4 +1,4 @@
-# Mini Core Bank System
+# Core Bank System
 
 A simple yet robust core banking backend system built with Spring Boot. It provides fundamental banking operations including user management, account handling, and transaction processing.
 
@@ -35,7 +35,7 @@ A simple yet robust core banking backend system built with Spring Boot. It provi
    ```env
    POSTGRES_USER=root
    POSTGRES_PASSWORD=password
-   POSTGRES_DB=mini_core_bank_system
+   POSTGRES_DB=core_bank_system
    ```
 
 2. **Start the Database:**
