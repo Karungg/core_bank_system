@@ -12,8 +12,10 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import java.util.Locale;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -42,6 +44,13 @@ class AuthControllerTest {
         @Autowired
         private ObjectMapper objectMapper;
 
+        @Autowired
+        private MessageSource messageSource;
+
+        private String getMessage(String code) {
+                return messageSource.getMessage(code, null, Locale.getDefault());
+        }
+
         @BeforeEach
         void setUp() {
                 accountRepository.deleteAll();
@@ -61,7 +70,7 @@ class AuthControllerTest {
                                 .content(objectMapper.writeValueAsString(request)))
                                 .andExpect(status().isCreated())
                                 .andExpect(jsonPath("$.code").value(201))
-                                .andExpect(jsonPath("$.message").value("Register successful"))
+                                .andExpect(jsonPath("$.message").value(getMessage("success.register")))
                                 .andExpect(jsonPath("$.data.username").value("testuser"))
                                 .andExpect(jsonPath("$.data.id").exists());
         }
@@ -78,7 +87,7 @@ class AuthControllerTest {
                                 .content(objectMapper.writeValueAsString(request)))
                                 .andExpect(status().isBadRequest())
                                 .andExpect(jsonPath("$.code").value(400))
-                                .andExpect(jsonPath("$.message").value("Validation Error"))
+                                .andExpect(jsonPath("$.message").value(getMessage("error.validation")))
                                 .andExpect(jsonPath("$.errors").exists());
         }
 
@@ -101,9 +110,10 @@ class AuthControllerTest {
                                 .content(objectMapper.writeValueAsString(request)))
                                 .andExpect(status().isBadRequest())
                                 .andExpect(jsonPath("$.code").value(400))
-                                .andExpect(jsonPath("$.message").value("Validation Error"))
+                                .andExpect(jsonPath("$.message").value(getMessage("error.validation")))
                                 .andExpect(jsonPath("$.errors")
-                                                .value(containsString("username: Username already exists")));
+                                                .value(containsString("username: "
+                                                                + getMessage("error.username.duplicate"))));
         }
 
         @Test
@@ -125,7 +135,7 @@ class AuthControllerTest {
                                 .content(objectMapper.writeValueAsString(loginRequest)))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.code").value(200))
-                                .andExpect(jsonPath("$.message").value("Login successful"))
+                                .andExpect(jsonPath("$.message").value(getMessage("success.login")))
                                 .andExpect(jsonPath("$.data.token").exists());
         }
 
@@ -147,7 +157,7 @@ class AuthControllerTest {
                                 .content(objectMapper.writeValueAsString(loginRequest)))
                                 .andExpect(status().isUnauthorized())
                                 .andExpect(jsonPath("$.code").value(401))
-                                .andExpect(jsonPath("$.message").value("Invalid username or password"));
+                                .andExpect(jsonPath("$.message").value(getMessage("error.bad-credentials")));
         }
 
         @Test
@@ -162,7 +172,7 @@ class AuthControllerTest {
                                 .content(objectMapper.writeValueAsString(request)))
                                 .andExpect(status().isBadRequest())
                                 .andExpect(jsonPath("$.code").value(400))
-                                .andExpect(jsonPath("$.message").value("Validation Error"))
+                                .andExpect(jsonPath("$.message").value(getMessage("error.validation")))
                                 .andExpect(jsonPath("$.errors").exists());
         }
 
