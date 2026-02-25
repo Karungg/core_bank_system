@@ -12,8 +12,10 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import java.util.Locale;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import tools.jackson.databind.ObjectMapper;
@@ -44,6 +46,13 @@ public class AccountControllerTest {
 
         @Autowired
         private ObjectMapper objectMapper;
+
+        @Autowired
+        private MessageSource messageSource;
+
+        private String getMessage(String code) {
+                return messageSource.getMessage(code, null, Locale.getDefault());
+        }
 
         private String token;
         private User user;
@@ -86,6 +95,7 @@ public class AccountControllerTest {
                                 .content(objectMapper.writeValueAsString(request)))
                                 .andExpect(status().isCreated())
                                 .andExpect(jsonPath("$.code").value(201))
+                                .andExpect(jsonPath("$.message").value(getMessage("success.create")))
                                 .andExpect(jsonPath("$.data.accountNumber").value(request.getAccountNumber()));
         }
 
@@ -101,7 +111,8 @@ public class AccountControllerTest {
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request)))
                                 .andExpect(status().isBadRequest())
-                                .andExpect(jsonPath("$.code").value(400));
+                                .andExpect(jsonPath("$.code").value(400))
+                                .andExpect(jsonPath("$.message").value(getMessage("error.validation")));
         }
 
         @Test
@@ -120,6 +131,8 @@ public class AccountControllerTest {
                 mockMvc.perform(get("/api/accounts/" + account.getId())
                                 .header("Authorization", "Bearer " + token))
                                 .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.code").value(200))
+                                .andExpect(jsonPath("$.message").value(getMessage("success.get")))
                                 .andExpect(jsonPath("$.data.id").value(account.getId().toString()));
         }
 
@@ -139,6 +152,8 @@ public class AccountControllerTest {
                 mockMvc.perform(get("/api/accounts")
                                 .header("Authorization", "Bearer " + token))
                                 .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.code").value(200))
+                                .andExpect(jsonPath("$.message").value(getMessage("success.get")))
                                 .andExpect(jsonPath("$.data.content", hasSize(1)));
         }
 
@@ -170,6 +185,8 @@ public class AccountControllerTest {
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(updateRequest)))
                                 .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.code").value(200))
+                                .andExpect(jsonPath("$.message").value(getMessage("success.update")))
                                 .andExpect(jsonPath("$.data.accountNumber").value("0987654321"))
                                 .andExpect(jsonPath("$.data.type").value("BLACK"));
         }
@@ -189,7 +206,9 @@ public class AccountControllerTest {
 
                 mockMvc.perform(delete("/api/accounts/" + account.getId())
                                 .header("Authorization", "Bearer " + token))
-                                .andExpect(status().isOk());
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.code").value(200))
+                                .andExpect(jsonPath("$.message").value(getMessage("success.delete")));
 
                 mockMvc.perform(get("/api/accounts/" + account.getId())
                                 .header("Authorization", "Bearer " + token))
