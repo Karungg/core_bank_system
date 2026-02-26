@@ -21,17 +21,23 @@ import org.springframework.stereotype.Service;
 public class AuthService {
 
     private final UserRepository userRepository;
+
     private final PasswordEncoder passwordEncoder;
+
     private final JwtService jwtService;
+
     private final AuthenticationManager authenticationManager;
+
     private final UserDetailsService userDetailsService;
 
     public UserResponse register(RegisterRequest request) {
         log.info("Registering user: {}", request.getUsername());
+
         if (userRepository.existsByUsername(request.getUsername())) {
             log.warn("Username already exists: {}", request.getUsername());
             throw new DuplicateResourceException("username", "error.username.duplicate");
         }
+
         User user = User.builder()
                 .username(request.getUsername())
                 .password(passwordEncoder.encode(request.getPassword()))
@@ -40,6 +46,7 @@ public class AuthService {
         userRepository.save(user);
 
         log.info("User registered successfully: {}", user.getId());
+
         return UserResponse.builder()
                 .id(user.getId())
                 .username(user.getUsername())
@@ -51,6 +58,7 @@ public class AuthService {
 
     public TokenResponse login(LoginRequest request) {
         log.info("Logging in user: {}", request.getUsername());
+
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         request.getUsername(),
@@ -60,6 +68,7 @@ public class AuthService {
         String jwtToken = jwtService.generateToken(userDetails);
 
         log.info("User logged in successfully: {}", request.getUsername());
+
         return TokenResponse.builder()
                 .token(jwtToken)
                 .build();

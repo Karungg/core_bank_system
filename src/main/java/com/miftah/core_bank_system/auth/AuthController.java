@@ -25,17 +25,21 @@ public class AuthController {
     private final MessageSource messageSource;
 
     @PostMapping(path = "/register", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<WebResponse<UserResponse>> register(
-            @RequestBody @Valid RegisterRequest request) {
+    public ResponseEntity<WebResponse<UserResponse>> register(@RequestBody @Valid RegisterRequest request) {
+
         UserResponse response = authService.register(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(WebResponse.success(HttpStatus.CREATED.value(),
-                messageSource.getMessage("success.register", null, LocaleContextHolder.getLocale()), response));
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(WebResponse.success(
+                HttpStatus.CREATED.value(),
+                messageSource.getMessage("success.register", null, LocaleContextHolder.getLocale()),
+                response));
     }
 
     @PostMapping(path = "/login", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<WebResponse<TokenResponse>> login(
-            @RequestBody @Valid LoginRequest request) {
-        return ResponseEntity.status(HttpStatus.OK).body(WebResponse.success(HttpStatus.OK.value(),
+    public ResponseEntity<WebResponse<TokenResponse>> login(@RequestBody @Valid LoginRequest request) {
+
+        return ResponseEntity.status(HttpStatus.OK).body(WebResponse.success(
+                HttpStatus.OK.value(),
                 messageSource.getMessage("success.login", null, LocaleContextHolder.getLocale()),
                 authService.login(request)));
     }
