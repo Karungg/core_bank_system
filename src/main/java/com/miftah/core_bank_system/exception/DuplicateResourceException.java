@@ -8,9 +8,11 @@ import java.util.Map;
 public class DuplicateResourceException extends RuntimeException {
 
     private final String field;
-    private final String messageKey;
-    private final Map<String, String> errors;
 
+    private final String messageKey;
+
+    private final Map<String, String> errors;
+    
     public DuplicateResourceException(String field, String messageKey) {
         super();
         this.field = field;
