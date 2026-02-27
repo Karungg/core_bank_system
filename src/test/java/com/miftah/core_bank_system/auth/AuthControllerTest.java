@@ -65,12 +65,14 @@ class AuthControllerTest {
                                 .password("password123")
                                 .build();
 
+                String message = getMessage("success.register");
+
                 mockMvc.perform(post("/api/auth/register")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request)))
                                 .andExpect(status().isCreated())
                                 .andExpect(jsonPath("$.code").value(201))
-                                .andExpect(jsonPath("$.message").value(getMessage("success.register")))
+                                .andExpect(jsonPath("$.message").value(message))
                                 .andExpect(jsonPath("$.data.username").value("testuser"))
                                 .andExpect(jsonPath("$.data.id").exists());
         }
@@ -81,13 +83,15 @@ class AuthControllerTest {
                                 .username("") // Invalid
                                 .password("pwd") // Invalid
                                 .build();
+                
+                String message = getMessage("error.validation");
 
                 mockMvc.perform(post("/api/auth/register")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request)))
                                 .andExpect(status().isBadRequest())
                                 .andExpect(jsonPath("$.code").value(400))
-                                .andExpect(jsonPath("$.message").value(getMessage("error.validation")))
+                                .andExpect(jsonPath("$.message").value(message))
                                 .andExpect(jsonPath("$.errors").exists());
         }
 
@@ -103,6 +107,9 @@ class AuthControllerTest {
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request)))
                                 .andExpect(status().isCreated());
+                
+                String message = getMessage("error.validation");
+                String expectedDuplicateError = "username: " + getMessage("error.username.duplicate");
 
                 // Try to register again
                 mockMvc.perform(post("/api/auth/register")
@@ -110,10 +117,9 @@ class AuthControllerTest {
                                 .content(objectMapper.writeValueAsString(request)))
                                 .andExpect(status().isBadRequest())
                                 .andExpect(jsonPath("$.code").value(400))
-                                .andExpect(jsonPath("$.message").value(getMessage("error.validation")))
+                                .andExpect(jsonPath("$.message").value(message))
                                 .andExpect(jsonPath("$.errors")
-                                                .value(containsString("username: "
-                                                                + getMessage("error.username.duplicate"))));
+                                                .value(containsString(expectedDuplicateError)));
         }
 
         @Test
@@ -130,12 +136,14 @@ class AuthControllerTest {
                                 .password(password)
                                 .build();
 
+                String message = getMessage("success.login");
+
                 mockMvc.perform(post("/api/auth/login")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(loginRequest)))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.code").value(200))
-                                .andExpect(jsonPath("$.message").value(getMessage("success.login")))
+                                .andExpect(jsonPath("$.message").value(message))
                                 .andExpect(jsonPath("$.data.token").exists());
         }
 
@@ -151,13 +159,15 @@ class AuthControllerTest {
                                 .username("testbadcreds")
                                 .password("wrongpassword")
                                 .build();
+                
+                String message = getMessage("error.bad-credentials");
 
                 mockMvc.perform(post("/api/auth/login")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(loginRequest)))
                                 .andExpect(status().isUnauthorized())
                                 .andExpect(jsonPath("$.code").value(401))
-                                .andExpect(jsonPath("$.message").value(getMessage("error.bad-credentials")));
+                                .andExpect(jsonPath("$.message").value(message));
         }
 
         @Test
@@ -167,12 +177,14 @@ class AuthControllerTest {
                                 .password("")
                                 .build();
 
+                String message = getMessage("error.validation");
+
                 mockMvc.perform(post("/api/auth/login")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request)))
                                 .andExpect(status().isBadRequest())
                                 .andExpect(jsonPath("$.code").value(400))
-                                .andExpect(jsonPath("$.message").value(getMessage("error.validation")))
+                                .andExpect(jsonPath("$.message").value(message))
                                 .andExpect(jsonPath("$.errors").exists());
         }
 

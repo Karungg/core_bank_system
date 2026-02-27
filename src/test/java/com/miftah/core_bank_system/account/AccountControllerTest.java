@@ -89,14 +89,16 @@ public class AccountControllerTest {
                                 .type(AccountType.SILVER)
                                 .build();
 
+                String expectedMessage = getMessage("success.create");
+
                 mockMvc.perform(post("/api/accounts")
                                 .header("Authorization", "Bearer " + token)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request)))
-                                .andExpect(status().isCreated())
-                                .andExpect(jsonPath("$.code").value(201))
-                                .andExpect(jsonPath("$.message").value(getMessage("success.create")))
-                                .andExpect(jsonPath("$.data.accountNumber").value(request.getAccountNumber()));
+                        .andExpect(status().isCreated())
+                        .andExpect(jsonPath("$.code").value(201))
+                        .andExpect(jsonPath("$.message").value(expectedMessage))
+                        .andExpect(jsonPath("$.data.accountNumber").value(request.getAccountNumber()));
         }
 
         @Test
@@ -106,69 +108,60 @@ public class AccountControllerTest {
                                 // Missing required fields
                                 .build();
 
+                String expectedMessage = getMessage("error.validation");
+
                 mockMvc.perform(post("/api/accounts")
                                 .header("Authorization", "Bearer " + token)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request)))
-                                .andExpect(status().isBadRequest())
-                                .andExpect(jsonPath("$.code").value(400))
-                                .andExpect(jsonPath("$.message").value(getMessage("error.validation")));
+                        .andExpect(status().isBadRequest())
+                        .andExpect(jsonPath("$.code").value(400))
+                        .andExpect(jsonPath("$.message").value(expectedMessage));
+        }
+
+        private Account createTestAccount() {
+                return Account.builder()
+                                .user(user)
+                                .accountNumber("1234567890")
+                                .balance(new BigDecimal("1000.00"))
+                                .pin("encoded_pin")
+                                .cardNumber("1234-5678-9012-3456")
+                                .cvv("123")
+                                .type(AccountType.SILVER)
+                                .build();
         }
 
         @Test
         void getById_Success() throws Exception {
-                Account account = Account.builder()
-                                .user(user)
-                                .accountNumber("1234567890")
-                                .balance(new BigDecimal("1000.00"))
-                                .pin("encoded_pin")
-                                .cardNumber("1234-5678-9012-3456")
-                                .cvv("123")
-                                .type(AccountType.SILVER)
-                                .build();
-                account = accountRepository.save(account);
+                Account account = accountRepository.save(createTestAccount());
+
+                String expectedMessage = getMessage("success.get");
 
                 mockMvc.perform(get("/api/accounts/" + account.getId())
                                 .header("Authorization", "Bearer " + token))
-                                .andExpect(status().isOk())
-                                .andExpect(jsonPath("$.code").value(200))
-                                .andExpect(jsonPath("$.message").value(getMessage("success.get")))
-                                .andExpect(jsonPath("$.data.id").value(account.getId().toString()));
+                        .andExpect(status().isOk())
+                        .andExpect(jsonPath("$.code").value(200))
+                        .andExpect(jsonPath("$.message").value(expectedMessage))
+                        .andExpect(jsonPath("$.data.id").value(account.getId().toString()));
         }
 
         @Test
         void getAll_Success() throws Exception {
-                Account account = Account.builder()
-                                .user(user)
-                                .accountNumber("1234567890")
-                                .balance(new BigDecimal("1000.00"))
-                                .pin("encoded_pin")
-                                .cardNumber("1234-5678-9012-3456")
-                                .cvv("123")
-                                .type(AccountType.SILVER)
-                                .build();
-                accountRepository.save(account);
+                accountRepository.save(createTestAccount());
+
+                String expectedMessage = getMessage("success.get");
 
                 mockMvc.perform(get("/api/accounts")
                                 .header("Authorization", "Bearer " + token))
-                                .andExpect(status().isOk())
-                                .andExpect(jsonPath("$.code").value(200))
-                                .andExpect(jsonPath("$.message").value(getMessage("success.get")))
-                                .andExpect(jsonPath("$.data.content", hasSize(1)));
+                        .andExpect(status().isOk())
+                        .andExpect(jsonPath("$.code").value(200))
+                        .andExpect(jsonPath("$.message").value(expectedMessage))
+                        .andExpect(jsonPath("$.data.content", hasSize(1)));
         }
 
         @Test
         void update_Success() throws Exception {
-                Account account = Account.builder()
-                                .user(user)
-                                .accountNumber("1234567890")
-                                .balance(new BigDecimal("1000.00"))
-                                .pin("encoded_pin")
-                                .cardNumber("1234-5678-9012-3456")
-                                .cvv("123")
-                                .type(AccountType.SILVER)
-                                .build();
-                account = accountRepository.save(account);
+                Account account = accountRepository.save(createTestAccount());
 
                 AccountRequest updateRequest = AccountRequest.builder()
                                 .userId(user.getId())
@@ -180,38 +173,33 @@ public class AccountControllerTest {
                                 .type(AccountType.BLACK)
                                 .build();
 
+                String expectedMessage = getMessage("success.update");
+
                 mockMvc.perform(put("/api/accounts/" + account.getId())
                                 .header("Authorization", "Bearer " + token)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(updateRequest)))
-                                .andExpect(status().isOk())
-                                .andExpect(jsonPath("$.code").value(200))
-                                .andExpect(jsonPath("$.message").value(getMessage("success.update")))
-                                .andExpect(jsonPath("$.data.accountNumber").value("0987654321"))
-                                .andExpect(jsonPath("$.data.type").value("BLACK"));
+                        .andExpect(status().isOk())
+                        .andExpect(jsonPath("$.code").value(200))
+                        .andExpect(jsonPath("$.message").value(expectedMessage))
+                        .andExpect(jsonPath("$.data.accountNumber").value("0987654321"))
+                        .andExpect(jsonPath("$.data.type").value("BLACK"));
         }
 
         @Test
         void delete_Success() throws Exception {
-                Account account = Account.builder()
-                                .user(user)
-                                .accountNumber("1234567890")
-                                .balance(new BigDecimal("1000.00"))
-                                .pin("encoded_pin")
-                                .cardNumber("1234-5678-9012-3456")
-                                .cvv("123")
-                                .type(AccountType.SILVER)
-                                .build();
-                account = accountRepository.save(account);
+                Account account = accountRepository.save(createTestAccount());
+
+                String expectedMessage = getMessage("success.delete");
 
                 mockMvc.perform(delete("/api/accounts/" + account.getId())
                                 .header("Authorization", "Bearer " + token))
-                                .andExpect(status().isOk())
-                                .andExpect(jsonPath("$.code").value(200))
-                                .andExpect(jsonPath("$.message").value(getMessage("success.delete")));
+                        .andExpect(status().isOk())
+                        .andExpect(jsonPath("$.code").value(200))
+                        .andExpect(jsonPath("$.message").value(expectedMessage));
 
                 mockMvc.perform(get("/api/accounts/" + account.getId())
                                 .header("Authorization", "Bearer " + token))
-                                .andExpect(status().isNotFound());
+                        .andExpect(status().isNotFound());
         }
 }
