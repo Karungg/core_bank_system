@@ -27,73 +27,67 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class UserController {
 
-        private final UserService userService;
+    private final UserService userService;
+    
+    private final MessageSource messageSource;
 
-        private final MessageSource messageSource;
+    @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<WebResponse<Page<UserResponse>>> getAll(@PageableDefault(size = 10) Pageable pageable) {
+        Page<UserResponse> responses = userService.getAll(pageable);
+        String message = messageSource.getMessage("success.get", null, LocaleContextHolder.getLocale());
 
-        @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-        public ResponseEntity<WebResponse<Page<UserResponse>>> getAll(@PageableDefault(size = 10) Pageable pageable) {
-                Page<UserResponse> responses = userService.getAll(pageable);
+        return ResponseEntity.status(HttpStatus.OK).body(
+                WebResponse.success(HttpStatus.OK.value(), message, responses)
+        );
+    }
 
-                return ResponseEntity.status(HttpStatus.OK).body(
-                        WebResponse.success(
-                                HttpStatus.OK.value(),
-                                messageSource.getMessage("success.get", null, LocaleContextHolder.getLocale()),
-                                responses));
-        }
+    @GetMapping(path = "/{userId}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<WebResponse<UserResponse>> getById(@PathVariable("userId") UUID userId) {
+        UserResponse response = userService.getById(userId);
+        String message = messageSource.getMessage("success.get", null, LocaleContextHolder.getLocale());
 
-        @GetMapping(path = "/{userId}", produces = MediaType.APPLICATION_JSON_VALUE)
-        public ResponseEntity<WebResponse<UserResponse>> getById(@PathVariable("userId") UUID userId) {
-                UserResponse response = userService.getById(userId);
+        return ResponseEntity.status(HttpStatus.OK).body(
+                WebResponse.success(HttpStatus.OK.value(), message, response)
+        );
+    }
 
-                return ResponseEntity.status(HttpStatus.OK).body(
-                        WebResponse.success(
-                                HttpStatus.OK.value(),
-                                messageSource.getMessage("success.get", null, LocaleContextHolder.getLocale()),
-                                response));
-        }
+    @PostMapping(path = "/admin", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<WebResponse<UserResponse>> createAdmin(@RequestBody @Valid RegisterRequest request) {
+        UserResponse response = userService.createAdmin(request);
+        String message = messageSource.getMessage("success.create", null, LocaleContextHolder.getLocale());
 
-        @PostMapping(path = "/admin", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-        public ResponseEntity<WebResponse<UserResponse>> createAdmin(@RequestBody @Valid RegisterRequest request) {
-                UserResponse response = userService.createAdmin(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(
+                WebResponse.success(HttpStatus.CREATED.value(), message, response)
+        );
+    }
 
-                return ResponseEntity.status(HttpStatus.CREATED).body(
-                        WebResponse.success(
-                                HttpStatus.CREATED.value(),
-                                messageSource.getMessage("success.create", null, LocaleContextHolder.getLocale()),
-                                response));
-        }
+    @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<WebResponse<UserResponse>> createUserWithProfile(@RequestBody @Valid CreateUserWithProfileRequest request) {
+        UserResponse response = userService.createUserWithProfile(request);
+        String message = messageSource.getMessage("success.create", null, LocaleContextHolder.getLocale());
 
-        @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-        public ResponseEntity<WebResponse<UserResponse>> createUserWithProfile(@RequestBody @Valid CreateUserWithProfileRequest request) {
-                UserResponse response = userService.createUserWithProfile(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(
+                WebResponse.success(HttpStatus.CREATED.value(), message, response)
+        );
+    }
 
-                return ResponseEntity.status(HttpStatus.CREATED).body(
-                        WebResponse.success(
-                                HttpStatus.CREATED.value(),
-                                messageSource.getMessage("success.create", null, LocaleContextHolder.getLocale()),
-                                response));
-        }
+    @PutMapping(path = "/admin/{userId}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<WebResponse<UserResponse>> updateAdmin(@PathVariable("userId") UUID userId, @RequestBody @Valid UpdateUserRequest request) {
+        UserResponse response = userService.updateAdmin(userId, request);
+        String message = messageSource.getMessage("success.update", null, LocaleContextHolder.getLocale());
 
-        @PutMapping(path = "/admin/{userId}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-        public ResponseEntity<WebResponse<UserResponse>> updateAdmin(@PathVariable("userId") UUID userId, @RequestBody @Valid UpdateUserRequest request) {
-                UserResponse response = userService.updateAdmin(userId, request);
+        return ResponseEntity.status(HttpStatus.OK).body(
+                WebResponse.success(HttpStatus.OK.value(), message, response)
+        );
+    }
 
-                return ResponseEntity.status(HttpStatus.OK).body(
-                        WebResponse.success(
-                                HttpStatus.OK.value(),
-                                messageSource.getMessage("success.update", null, LocaleContextHolder.getLocale()),
-                                response));
-        }
+    @DeleteMapping(path = "/admin/{userId}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<WebResponse<String>> deleteAdmin(@PathVariable("userId") UUID userId) {
+        userService.deleteAdmin(userId);
+        String message = messageSource.getMessage("success.delete", null, LocaleContextHolder.getLocale());
 
-        @DeleteMapping(path = "/admin/{userId}", produces = MediaType.APPLICATION_JSON_VALUE)
-        public ResponseEntity<WebResponse<String>> deleteAdmin(@PathVariable("userId") UUID userId) {
-                userService.deleteAdmin(userId);
-
-                return ResponseEntity.status(HttpStatus.OK).body(
-                        WebResponse.success(
-                                HttpStatus.OK.value(),
-                                messageSource.getMessage("success.delete", null, LocaleContextHolder.getLocale()),
-                                "OK"));
-        }
+        return ResponseEntity.status(HttpStatus.OK).body(
+                WebResponse.success(HttpStatus.OK.value(), message, "OK")
+        );
+    }
 }

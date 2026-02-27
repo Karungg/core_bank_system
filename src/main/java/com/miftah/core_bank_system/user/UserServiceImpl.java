@@ -36,8 +36,8 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional(readOnly = true)
     public UserResponse getById(UUID id) {
-        User user = userRepository.findById(id).orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "User not found"));
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
                         
         return toUserResponse(user);
     }
@@ -95,8 +95,7 @@ public class UserServiceImpl implements UserService {
         log.info("Updating admin user: {}", id);
 
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "User not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
 
         if (userRepository.existsByUsernameAndIdNot(request.getUsername(), id)) {
             log.warn("Username already exists: {}", request.getUsername());
@@ -121,8 +120,8 @@ public class UserServiceImpl implements UserService {
     public void deleteAdmin(UUID id) {
         log.info("Deleting admin user: {}", id);
 
-        User user = userRepository.findById(id).orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "User not found"));
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
 
         userRepository.delete(user);
 
