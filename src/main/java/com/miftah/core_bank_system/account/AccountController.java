@@ -20,58 +20,57 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class AccountController {
 
-        private final AccountService accountService;
-        private final MessageSource messageSource;
+    private final AccountService accountService;
 
-        @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-        public ResponseEntity<WebResponse<AccountResponse>> create(@RequestBody @Valid AccountRequest request) {
-                AccountResponse response = accountService.create(request);
-                return ResponseEntity.status(HttpStatus.CREATED)
-                                .body(WebResponse.success(HttpStatus.CREATED.value(),
-                                                messageSource.getMessage("success.create", null,
-                                                                LocaleContextHolder.getLocale()),
-                                                response));
-        }
+    private final MessageSource messageSource;
 
-        @GetMapping(path = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
-        public ResponseEntity<WebResponse<AccountResponse>> getById(@PathVariable("id") UUID id) {
-                AccountResponse response = accountService.getById(id);
-                return ResponseEntity.status(HttpStatus.OK)
-                                .body(WebResponse.success(HttpStatus.OK.value(),
-                                                messageSource.getMessage("success.get", null,
-                                                                LocaleContextHolder.getLocale()),
-                                                response));
-        }
+    @GetMapping(path = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<WebResponse<AccountResponse>> getById(@PathVariable("id") UUID id) {
+        AccountResponse response = accountService.getById(id);
+        String message = messageSource.getMessage("success.get", null, LocaleContextHolder.getLocale());
+        
+        return ResponseEntity.status(HttpStatus.OK).body(
+                WebResponse.success(HttpStatus.OK.value(), message, response)
+        );
+    }
 
-        @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-        public ResponseEntity<WebResponse<Page<AccountResponse>>> getAll(
-                        @PageableDefault(size = 10) Pageable pageable) {
-                Page<AccountResponse> responses = accountService.getAll(pageable);
-                return ResponseEntity.status(HttpStatus.OK)
-                                .body(WebResponse.success(HttpStatus.OK.value(),
-                                                messageSource.getMessage("success.get", null,
-                                                                LocaleContextHolder.getLocale()),
-                                                responses));
-        }
+    @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<WebResponse<Page<AccountResponse>>> getAll(@PageableDefault(size = 10) Pageable pageable) {
+        Page<AccountResponse> responses = accountService.getAll(pageable);
+        String message = messageSource.getMessage("success.get", null, LocaleContextHolder.getLocale());
+        
+        return ResponseEntity.status(HttpStatus.OK).body(
+                WebResponse.success(HttpStatus.OK.value(), message, responses)
+        );
+    }
 
-        @PutMapping(path = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-        public ResponseEntity<WebResponse<AccountResponse>> update(@PathVariable("id") UUID id,
-                        @RequestBody @Valid AccountRequest request) {
-                AccountResponse response = accountService.update(id, request);
-                return ResponseEntity.status(HttpStatus.OK)
-                                .body(WebResponse.success(HttpStatus.OK.value(),
-                                                messageSource.getMessage("success.update", null,
-                                                                LocaleContextHolder.getLocale()),
-                                                response));
-        }
+    @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<WebResponse<AccountResponse>> create(@RequestBody @Valid AccountRequest request) {
+        AccountResponse response = accountService.create(request);
+        String message = messageSource.getMessage("success.create", null, LocaleContextHolder.getLocale());
+        
+        return ResponseEntity.status(HttpStatus.CREATED).body(
+                WebResponse.success(HttpStatus.CREATED.value(), message, response)
+        );
+    }
 
-        @DeleteMapping(path = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
-        public ResponseEntity<WebResponse<String>> delete(@PathVariable("id") UUID id) {
-                accountService.delete(id);
-                return ResponseEntity.status(HttpStatus.OK)
-                                .body(WebResponse.success(HttpStatus.OK.value(),
-                                                messageSource.getMessage("success.delete", null,
-                                                                LocaleContextHolder.getLocale()),
-                                                "OK"));
-        }
+    @PutMapping(path = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<WebResponse<AccountResponse>> update(@PathVariable("id") UUID id, @RequestBody @Valid AccountRequest request) {
+        AccountResponse response = accountService.update(id, request);
+        String message = messageSource.getMessage("success.update", null, LocaleContextHolder.getLocale());
+        
+        return ResponseEntity.status(HttpStatus.OK).body(
+                WebResponse.success(HttpStatus.OK.value(), message, response)
+        );
+    }
+
+    @DeleteMapping(path = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<WebResponse<String>> delete(@PathVariable("id") UUID id) {
+        accountService.delete(id);
+        String message = messageSource.getMessage("success.delete", null, LocaleContextHolder.getLocale());
+        
+        return ResponseEntity.status(HttpStatus.OK).body(
+                WebResponse.success(HttpStatus.OK.value(), message, "OK")
+        );
+    }
 }

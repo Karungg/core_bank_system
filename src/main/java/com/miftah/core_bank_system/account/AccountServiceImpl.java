@@ -12,8 +12,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import java.util.HashMap;
 import java.util.Map;
-
 import java.util.UUID;
 
 @Service
@@ -23,8 +23,24 @@ import java.util.UUID;
 public class AccountServiceImpl implements AccountService {
 
     private final AccountRepository accountRepository;
+
     private final UserRepository userRepository;
+
     private final PasswordEncoder passwordEncoder;
+    
+    @Override
+    public AccountResponse getById(UUID id) {
+        log.info("Fetching account by ID: {}", id);
+        Account account = findAccountByIdOrThrow(id);
+        return toResponse(account);
+    }
+
+    @Override
+    public Page<AccountResponse> getAll(Pageable pageable) {
+        log.info("Fetching all accounts with pageable: {}", pageable);
+        return accountRepository.findAll(pageable)
+                .map(this::toResponse);
+    }
 
     @Override
     @Transactional
@@ -34,10 +50,12 @@ public class AccountServiceImpl implements AccountService {
         User user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
 
-        Map<String, String> errors = new java.util.HashMap<>();
+        Map<String, String> errors = new HashMap<>();
+
         if (accountRepository.existsByAccountNumber(request.getAccountNumber())) {
             errors.put("accountNumber", "error.account.accountNumber.duplicate");
         }
+
         if (request.getCardNumber() != null && accountRepository.existsByCardNumber(request.getCardNumber())) {
             errors.put("cardNumber", "error.account.cardNumber.duplicate");
         }
@@ -63,20 +81,6 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
-    public AccountResponse getById(UUID id) {
-        log.info("Fetching account by ID: {}", id);
-        Account account = findAccountByIdOrThrow(id);
-        return toResponse(account);
-    }
-
-    @Override
-    public Page<AccountResponse> getAll(Pageable pageable) {
-        log.info("Fetching all accounts with pageable: {}", pageable);
-        return accountRepository.findAll(pageable)
-                .map(this::toResponse);
-    }
-
-    @Override
     @Transactional
     public AccountResponse update(UUID id, AccountRequest request) {
         log.info("Updating account ID: {}", id);
@@ -86,12 +90,13 @@ public class AccountServiceImpl implements AccountService {
         User user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
 
-        Map<String, String> errors = new java.util.HashMap<>();
+        Map<String, String> errors = new HashMap<>();
+
         if (accountRepository.existsByAccountNumberAndIdNot(request.getAccountNumber(), id)) {
             errors.put("accountNumber", "error.account.accountNumber.duplicate");
         }
-        if (request.getCardNumber() != null
-                && accountRepository.existsByCardNumberAndIdNot(request.getCardNumber(), id)) {
+
+        if (request.getCardNumber() != null && accountRepository.existsByCardNumberAndIdNot(request.getCardNumber(), id)) {
             errors.put("cardNumber", "error.account.cardNumber.duplicate");
         }
 
