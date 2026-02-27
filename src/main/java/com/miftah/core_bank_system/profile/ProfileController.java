@@ -30,6 +30,28 @@ public class ProfileController {
         private final ProfileService profileService;
         private final MessageSource messageSource;
 
+        @GetMapping(path = "/all", produces = MediaType.APPLICATION_JSON_VALUE)
+        public ResponseEntity<WebResponse<Page<ProfileResponse>>> getAll(
+                        @PageableDefault(size = 10) Pageable pageable) {
+                Page<ProfileResponse> responses = profileService.getAll(pageable);
+                return ResponseEntity.status(HttpStatus.OK)
+                                .body(WebResponse.success(HttpStatus.OK.value(),
+                                                messageSource.getMessage("success.get", null,
+                                                                LocaleContextHolder.getLocale()),
+                                                responses));
+        }
+
+        @GetMapping(path = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+        public ResponseEntity<WebResponse<ProfileResponse>> getById(
+                        @PathVariable("id") UUID id) {
+                ProfileResponse response = profileService.getById(id);
+                return ResponseEntity.status(HttpStatus.OK)
+                                .body(WebResponse.success(HttpStatus.OK.value(),
+                                                messageSource.getMessage("success.get", null,
+                                                                LocaleContextHolder.getLocale()),
+                                                response));
+        }
+
         @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
         public ResponseEntity<WebResponse<ProfileResponse>> create(@AuthenticationPrincipal User user,
                         @RequestBody @Valid ProfileRequest request) {
@@ -58,28 +80,6 @@ public class ProfileController {
                 return ResponseEntity.status(HttpStatus.OK)
                                 .body(WebResponse.success(HttpStatus.OK.value(),
                                                 messageSource.getMessage("success.update", null,
-                                                                LocaleContextHolder.getLocale()),
-                                                response));
-        }
-
-        @GetMapping(path = "/all", produces = MediaType.APPLICATION_JSON_VALUE)
-        public ResponseEntity<WebResponse<Page<ProfileResponse>>> getAll(
-                        @PageableDefault(size = 10) Pageable pageable) {
-                Page<ProfileResponse> responses = profileService.getAll(pageable);
-                return ResponseEntity.status(HttpStatus.OK)
-                                .body(WebResponse.success(HttpStatus.OK.value(),
-                                                messageSource.getMessage("success.get", null,
-                                                                LocaleContextHolder.getLocale()),
-                                                responses));
-        }
-
-        @GetMapping(path = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
-        public ResponseEntity<WebResponse<ProfileResponse>> getById(
-                        @PathVariable("id") UUID id) {
-                ProfileResponse response = profileService.getById(id);
-                return ResponseEntity.status(HttpStatus.OK)
-                                .body(WebResponse.success(HttpStatus.OK.value(),
-                                                messageSource.getMessage("success.get", null,
                                                                 LocaleContextHolder.getLocale()),
                                                 response));
         }
