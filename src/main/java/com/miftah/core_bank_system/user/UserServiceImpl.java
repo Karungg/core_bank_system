@@ -41,6 +41,28 @@ public class UserServiceImpl implements UserService {
                         
         return toUserResponse(user);
     }
+
+    @Override
+    @Transactional
+    public UserResponse createUser(RegisterRequest request) {
+        log.info("Creating user: {}", request.getUsername());
+
+        if (userRepository.existsByUsername(request.getUsername())) {
+            log.warn("Username already exists: {}", request.getUsername());
+            throw new DuplicateResourceException("username", "error.username.duplicate");
+        }
+
+        User user = User.builder()
+                .username(request.getUsername())
+                .password(passwordEncoder.encode(request.getPassword()))
+                .role(Role.USER)
+                .build();
+        userRepository.save(user);
+
+        log.info("User created successfully: {}", user.getId());
+
+        return toUserResponse(user);
+    }
     
     @Override
     @Transactional

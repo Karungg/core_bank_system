@@ -120,6 +120,40 @@ public class UserControllerTest {
         }
 
         @Test
+        void createUser_Success_ShouldReturnCreated() throws Exception {
+                RegisterRequest request = RegisterRequest.builder()
+                                .username("regularuser")
+                                .password("password")
+                                .build();
+
+                mockMvc.perform(post("/api/users")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)))
+                                .andExpect(status().isCreated())
+                                .andExpect(jsonPath("$.code", is(201)))
+                                .andExpect(jsonPath("$.message", is(getMessage("success.create"))))
+                                .andExpect(jsonPath("$.data.username", is("regularuser")))
+                                .andExpect(jsonPath("$.data.role", is("USER")));
+
+                assertTrue(userRepository.existsByUsername("regularuser"));
+        }
+
+        @Test
+        void createUser_DuplicateUsername_ShouldReturnBadRequest() throws Exception {
+                RegisterRequest request = RegisterRequest.builder()
+                                .username("regularuser")
+                                .password("password")
+                                .build();
+
+                userRepository.save(User.builder().username("regularuser").password("pwd").role(Role.USER).build());
+
+                mockMvc.perform(post("/api/users")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)))
+                                .andExpect(status().isBadRequest());
+        }
+
+        @Test
         void createUserWithProfile_Success_ShouldReturnCreated() throws Exception {
                 ProfileRequest profileRequest = createValidProfileRequest();
 

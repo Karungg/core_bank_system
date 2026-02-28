@@ -51,6 +51,16 @@ public class UserController {
         );
     }
 
+    @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<WebResponse<UserResponse>> createUser(@RequestBody @Valid RegisterRequest request) {
+        UserResponse response = userService.createUser(request);
+        String message = messageSource.getMessage("success.create", null, LocaleContextHolder.getLocale());
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(
+                WebResponse.success(HttpStatus.CREATED.value(), message, response)
+        );
+    }
+
     @PostMapping(path = "/admin", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<WebResponse<UserResponse>> createAdmin(@RequestBody @Valid RegisterRequest request) {
         UserResponse response = userService.createAdmin(request);

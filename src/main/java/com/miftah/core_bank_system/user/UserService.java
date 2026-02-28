@@ -12,6 +12,8 @@ public interface UserService {
 
     UserResponse getById(UUID id);
 
+    UserResponse createUser(RegisterRequest request);
+
     UserResponse createAdmin(RegisterRequest request);
 
     UserResponse createUserWithProfile(CreateUserWithProfileRequest request);

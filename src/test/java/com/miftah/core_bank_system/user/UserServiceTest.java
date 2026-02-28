@@ -101,6 +101,32 @@ class UserServiceTest {
     }
 
     @Test
+    void createUser_Success() {
+        when(userRepository.existsByUsername(anyString())).thenReturn(false);
+        when(passwordEncoder.encode(anyString())).thenReturn("encodedPassword");
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
+            User user = invocation.getArgument(0);
+            user.setId(UUID.randomUUID());
+            return user;
+        });
+
+        UserResponse response = userService.createUser(registerRequest);
+
+        assertNotNull(response);
+        assertEquals(Role.USER, response.getRole());
+        assertEquals(registerRequest.getUsername(), response.getUsername());
+        verify(userRepository).save(any(User.class));
+    }
+
+    @Test
+    void createUser_DuplicateUsername_ThrowsException() {
+        when(userRepository.existsByUsername(registerRequest.getUsername())).thenReturn(true);
+
+        assertThrows(DuplicateResourceException.class, () -> userService.createUser(registerRequest));
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
     void createUserWithProfile_Success() {
         when(userRepository.existsByUsername(anyString())).thenReturn(false);
         when(passwordEncoder.encode(anyString())).thenReturn("encodedPassword");
