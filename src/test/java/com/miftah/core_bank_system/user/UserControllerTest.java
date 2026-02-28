@@ -133,7 +133,7 @@ public class UserControllerTest {
                                 .profile(profileRequest)
                                 .build();
 
-                mockMvc.perform(post("/api/users")
+                mockMvc.perform(post("/api/users/profile")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request)))
                                 .andExpect(status().isCreated())
@@ -162,7 +162,7 @@ public class UserControllerTest {
                                 .profile(profileRequest)
                                 .build();
 
-                mockMvc.perform(post("/api/users")
+                mockMvc.perform(post("/api/users/profile")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request)))
                                 .andExpect(status().isBadRequest());

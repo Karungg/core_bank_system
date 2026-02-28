@@ -61,7 +61,7 @@ public class UserController {
         );
     }
 
-    @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(path = "/profile",consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<WebResponse<UserResponse>> createUserWithProfile(@RequestBody @Valid CreateUserWithProfileRequest request) {
         UserResponse response = userService.createUserWithProfile(request);
         String message = messageSource.getMessage("success.create", null, LocaleContextHolder.getLocale());
