@@ -6,6 +6,7 @@ CREATE TABLE accounts (
     pin VARCHAR(255) NOT NULL,
     card_number VARCHAR(30) NOT NULL,
     cvv VARCHAR(3) NOT NULL,
+    expired_date DATE NOT NULL,
     type VARCHAR(50) NOT NULL,
     created_at DATE NOT NULL,
     updated_at DATE NOT NULL,

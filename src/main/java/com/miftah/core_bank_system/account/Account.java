@@ -48,7 +48,7 @@ public class Account {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Column(name = "account_number", unique = true, length = 50, nullable = false)
+    @Column(name = "account_number", unique = true, length = 10, nullable = false)
     private String accountNumber;
 
     @Column(precision = 12, scale = 0, nullable = false)
@@ -57,11 +57,14 @@ public class Account {
     @Column(length = 255, nullable = false)
     private String pin;
 
-    @Column(name = "card_number", unique = true, length = 30, nullable = false)
+    @Column(name = "card_number", unique = true, length = 16, nullable = false)
     private String cardNumber;
 
     @Column(length = 3, nullable = false)
     private String cvv;
+
+    @Column(name = "expired_date", nullable = false)
+    private LocalDate expiredDate;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

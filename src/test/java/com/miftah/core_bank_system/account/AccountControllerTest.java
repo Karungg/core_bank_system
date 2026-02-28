@@ -21,6 +21,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import tools.jackson.databind.ObjectMapper;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -81,11 +82,7 @@ public class AccountControllerTest {
         void create_Success() throws Exception {
                 AccountRequest request = AccountRequest.builder()
                                 .userId(user.getId())
-                                .accountNumber("1234567890")
-                                .balance(new BigDecimal("1000.00"))
                                 .pin("123456")
-                                .cardNumber("1234-5678-9012-3456")
-                                .cvv("123")
                                 .type(AccountType.SILVER)
                                 .build();
 
@@ -98,7 +95,7 @@ public class AccountControllerTest {
                         .andExpect(status().isCreated())
                         .andExpect(jsonPath("$.code").value(201))
                         .andExpect(jsonPath("$.message").value(expectedMessage))
-                        .andExpect(jsonPath("$.data.accountNumber").value(request.getAccountNumber()));
+                        .andExpect(jsonPath("$.data.accountNumber").exists());
         }
 
         @Test
@@ -128,6 +125,7 @@ public class AccountControllerTest {
                                 .cardNumber("1234-5678-9012-3456")
                                 .cvv("123")
                                 .type(AccountType.SILVER)
+                                .expiredDate(LocalDate.now().plusYears(5))
                                 .build();
         }
 
@@ -165,11 +163,7 @@ public class AccountControllerTest {
 
                 AccountRequest updateRequest = AccountRequest.builder()
                                 .userId(user.getId())
-                                .accountNumber("0987654321")
-                                .balance(new BigDecimal("2000.00"))
                                 .pin("654321")
-                                .cardNumber("9876-5432-1098-7654")
-                                .cvv("321")
                                 .type(AccountType.BLACK)
                                 .build();
 
@@ -182,7 +176,7 @@ public class AccountControllerTest {
                         .andExpect(status().isOk())
                         .andExpect(jsonPath("$.code").value(200))
                         .andExpect(jsonPath("$.message").value(expectedMessage))
-                        .andExpect(jsonPath("$.data.accountNumber").value("0987654321"))
+                        .andExpect(jsonPath("$.data.accountNumber").value("1234567890"))
                         .andExpect(jsonPath("$.data.type").value("BLACK"));
         }
 

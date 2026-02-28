@@ -1,6 +1,5 @@
 package com.miftah.core_bank_system.account;
 
-import com.miftah.core_bank_system.exception.DuplicateResourceException;
 import com.miftah.core_bank_system.user.User;
 import com.miftah.core_bank_system.user.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -12,8 +11,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import java.util.HashMap;
-import java.util.Map;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.UUID;
 
 @Service
@@ -27,8 +27,11 @@ public class AccountServiceImpl implements AccountService {
     private final UserRepository userRepository;
 
     private final PasswordEncoder passwordEncoder;
+
+    private final AccountGeneratorUtil accountGeneratorUtil;
     
     @Override
+    @Transactional(readOnly = true)
     public AccountResponse getById(UUID id) {
         log.info("Fetching account by ID: {}", id);
         Account account = findAccountByIdOrThrow(id);
@@ -36,6 +39,7 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<AccountResponse> getAll(Pageable pageable) {
         log.info("Fetching all accounts with pageable: {}", pageable);
         return accountRepository.findAll(pageable)
@@ -50,28 +54,28 @@ public class AccountServiceImpl implements AccountService {
         User user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
 
-        Map<String, String> errors = new HashMap<>();
+        String accountNumber = accountGeneratorUtil.generateAccountNumber();
+        String cardNumber = accountGeneratorUtil.generateCardNumber();
+        String cvv = accountGeneratorUtil.generateCvv();
 
-        if (accountRepository.existsByAccountNumber(request.getAccountNumber())) {
-            errors.put("accountNumber", "error.account.accountNumber.duplicate");
-        }
+        do {
+            accountNumber = accountGeneratorUtil.generateAccountNumber();
+        } while (accountRepository.existsByAccountNumber(accountNumber));
 
-        if (request.getCardNumber() != null && accountRepository.existsByCardNumber(request.getCardNumber())) {
-            errors.put("cardNumber", "error.account.cardNumber.duplicate");
-        }
-
-        if (!errors.isEmpty()) {
-            throw new DuplicateResourceException(errors);
-        }
+        do {
+            cardNumber = accountGeneratorUtil.generateCardNumber();
+        } while (accountRepository.existsByCardNumber(cardNumber));
 
         Account account = Account.builder()
                 .user(user)
-                .accountNumber(request.getAccountNumber())
-                .balance(request.getBalance())
+                .accountNumber(accountNumber)
+                .balance(BigDecimal.valueOf(0))
                 .pin(passwordEncoder.encode(request.getPin()))
-                .cardNumber(request.getCardNumber())
-                .cvv(request.getCvv())
+                .cardNumber(cardNumber)
+                .cvv(cvv)
+                .expiredDate(LocalDate.now())
                 .type(request.getType())
+                .expiredDate(LocalDate.now().plusYears(5))
                 .build();
 
         account = accountRepository.save(account);
@@ -90,26 +94,8 @@ public class AccountServiceImpl implements AccountService {
         User user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
 
-        Map<String, String> errors = new HashMap<>();
-
-        if (accountRepository.existsByAccountNumberAndIdNot(request.getAccountNumber(), id)) {
-            errors.put("accountNumber", "error.account.accountNumber.duplicate");
-        }
-
-        if (request.getCardNumber() != null && accountRepository.existsByCardNumberAndIdNot(request.getCardNumber(), id)) {
-            errors.put("cardNumber", "error.account.cardNumber.duplicate");
-        }
-
-        if (!errors.isEmpty()) {
-            throw new DuplicateResourceException(errors);
-        }
-
         account.setUser(user);
-        account.setAccountNumber(request.getAccountNumber());
-        account.setBalance(request.getBalance());
         account.setPin(passwordEncoder.encode(request.getPin()));
-        account.setCardNumber(request.getCardNumber());
-        account.setCvv(request.getCvv());
         account.setType(request.getType());
 
         account = accountRepository.save(account);
