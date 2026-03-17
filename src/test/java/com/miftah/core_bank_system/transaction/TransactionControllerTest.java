@@ -19,6 +19,8 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.annotation.Transactional;
+
 import tools.jackson.databind.ObjectMapper;
 
 import java.math.BigDecimal;
@@ -36,8 +38,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @Import(TestcontainersConfiguration.class)
 @ActiveProfiles("test")
-@org.springframework.transaction.annotation.Transactional
-public class TransactionControllerIntegrationTest {
+@Transactional
+public class TransactionControllerTest {
 
         @Autowired
         private MockMvc mockMvc;

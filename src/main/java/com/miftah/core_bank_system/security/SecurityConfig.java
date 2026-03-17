@@ -42,12 +42,12 @@ public class SecurityConfig {
 
                                                 .requestMatchers("/api/auth/**").permitAll()
                                                 .requestMatchers("/api/users/**").hasRole("ADMIN")
-                                                .requestMatchers("/api/profiles/**").hasRole("ADMIN")
+                                                .requestMatchers("/api/profiles/**").hasAnyRole("ADMIN", "USER")
 
                                                 .requestMatchers(USER_WHITELIST).hasRole("USER")
-                                                
+
                                                 .requestMatchers("/api/accounts/**").hasRole("ADMIN")
-                                                .requestMatchers("/api/transactions/**").hasAnyRole("ADMIN, USER")
+                                                .requestMatchers("/api/transactions/**").hasAnyRole("ADMIN", "USER")
                                                 .anyRequest().authenticated())
                                 .sessionManagement(session -> session
                                                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
