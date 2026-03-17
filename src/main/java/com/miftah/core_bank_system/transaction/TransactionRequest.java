@@ -1,7 +1,9 @@
 package com.miftah.core_bank_system.transaction;
 
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -23,4 +25,8 @@ public class TransactionRequest {
     private UUID fromAccountId;
 
     private UUID toAccountId;
+
+    @NotBlank(message = "{validation.transaction.pin.required}")
+    @Size(min = 6, max = 6, message = "{validation.transaction.pin.length}")
+    private String pin;
 }

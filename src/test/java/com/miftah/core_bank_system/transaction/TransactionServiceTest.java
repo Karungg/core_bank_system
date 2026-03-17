@@ -9,6 +9,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
@@ -28,6 +29,9 @@ class TransactionServiceTest {
 
     @Mock
     private AccountRepository accountRepository;
+
+    @Mock
+    private PasswordEncoder passwordEncoder;
 
     @InjectMocks
     private TransactionServiceImpl transactionService;
@@ -55,6 +59,7 @@ class TransactionServiceTest {
                 .user(user)
                 .accountNumber("1234567890")
                 .balance(new BigDecimal("1000"))
+                .pin("$2a$10$encodedPin") // stored as encoded
                 .build();
 
         toAccount = Account.builder()
@@ -62,12 +67,14 @@ class TransactionServiceTest {
                 .user(otherUser)
                 .accountNumber("0987654321")
                 .balance(new BigDecimal("500"))
+                .pin("$2a$10$encodedPin2")
                 .build();
 
         request = TransactionRequest.builder()
                 .fromAccountId(fromAccount.getId())
                 .toAccountId(toAccount.getId())
                 .amount(new BigDecimal("100"))
+                .pin("123456") // raw PIN supplied by user
                 .build();
     }
 
@@ -75,6 +82,7 @@ class TransactionServiceTest {
     void createTransaction_Success() {
         when(accountRepository.findById(fromAccount.getId())).thenReturn(Optional.of(fromAccount));
         when(accountRepository.findById(toAccount.getId())).thenReturn(Optional.of(toAccount));
+        when(passwordEncoder.matches(request.getPin(), fromAccount.getPin())).thenReturn(true);
         when(transactionRepository.save(any(Transaction.class))).thenAnswer(invocation -> {
             Transaction transaction = invocation.getArgument(0);
             transaction.setId(UUID.randomUUID());
@@ -139,6 +147,19 @@ class TransactionServiceTest {
         request.setAmount(new BigDecimal("2000")); // Balance is 1000
         when(accountRepository.findById(fromAccount.getId())).thenReturn(Optional.of(fromAccount));
         when(accountRepository.findById(toAccount.getId())).thenReturn(Optional.of(toAccount));
+        when(passwordEncoder.matches(request.getPin(), fromAccount.getPin())).thenReturn(true);
+
+        assertThrows(ResponseStatusException.class, () -> transactionService.createTransaction(user, request));
+
+        verify(accountRepository, never()).save(any());
+        verify(transactionRepository, never()).save(any());
+    }
+
+    @Test
+    void createTransaction_InvalidPin() {
+        when(accountRepository.findById(fromAccount.getId())).thenReturn(Optional.of(fromAccount));
+        when(accountRepository.findById(toAccount.getId())).thenReturn(Optional.of(toAccount));
+        when(passwordEncoder.matches(request.getPin(), fromAccount.getPin())).thenReturn(false);
 
         assertThrows(ResponseStatusException.class, () -> transactionService.createTransaction(user, request));
 

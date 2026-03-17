@@ -6,6 +6,7 @@ import com.miftah.core_bank_system.user.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
@@ -19,6 +20,7 @@ public class TransactionServiceImpl implements TransactionService {
 
     private final TransactionRepository transactionRepository;
     private final AccountRepository accountRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     @Transactional
@@ -42,6 +44,12 @@ public class TransactionServiceImpl implements TransactionService {
         if (fromAccount.getUser().getId().equals(toAccount.getUser().getId())) {
             log.warn("Cannot transaction with same account");
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "error.transaction.sameAccount");
+        }
+
+        // Validate PIN before any financial operation
+        if (!passwordEncoder.matches(request.getPin(), fromAccount.getPin())) {
+            log.warn("Invalid PIN for account: {}", fromAccount.getAccountNumber());
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "error.transaction.pin.invalid");
         }
 
         // Check balance

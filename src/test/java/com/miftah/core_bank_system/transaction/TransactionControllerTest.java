@@ -17,6 +17,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
@@ -62,6 +63,9 @@ public class TransactionControllerTest {
         @Autowired
         private MessageSource messageSource;
 
+        @Autowired
+        private PasswordEncoder passwordEncoder;
+
         private String getMessage(String code) {
                 return messageSource.getMessage(code, null, Locale.getDefault());
         }
@@ -99,7 +103,7 @@ public class TransactionControllerTest {
                                 .balance(new BigDecimal("1000"))
                                 .cardNumber("1234567890123456")
                                 .cvv("123")
-                                .pin("123456")
+                                .pin(passwordEncoder.encode("123456"))
                                 .type(AccountType.SILVER)
                                 .createdAt(LocalDate.now())
                                 .updatedAt(LocalDate.now())
@@ -113,7 +117,7 @@ public class TransactionControllerTest {
                                 .balance(new BigDecimal("500"))
                                 .cardNumber("6543210987654321")
                                 .cvv("456")
-                                .pin("654321")
+                                .pin(passwordEncoder.encode("654321"))
                                 .type(AccountType.GOLD)
                                 .createdAt(LocalDate.now())
                                 .updatedAt(LocalDate.now())
@@ -126,6 +130,7 @@ public class TransactionControllerTest {
                                 .fromAccountId(account1.getId())
                                 .toAccountId(account2.getId())
                                 .amount(new BigDecimal("100"))
+                                .pin("123456")
                                 .build();
         }
 
@@ -162,6 +167,7 @@ public class TransactionControllerTest {
                                 .fromAccountId(account2.getId())
                                 .toAccountId(account1.getId())
                                 .amount(new BigDecimal("100"))
+                                .pin("654321")
                                 .build();
 
                 mockMvc.perform(post("/api/transactions")
@@ -178,6 +184,7 @@ public class TransactionControllerTest {
                                 .fromAccountId(account1.getId())
                                 .toAccountId(account2.getId())
                                 .amount(new BigDecimal("2000")) // More than balance (1000)
+                                .pin("123456")
                                 .build();
 
                 mockMvc.perform(post("/api/transactions")
@@ -194,6 +201,7 @@ public class TransactionControllerTest {
                                 .fromAccountId(UUID.randomUUID()) // Random non-existent account
                                 .toAccountId(account2.getId())
                                 .amount(new BigDecimal("100"))
+                                .pin("123456")
                                 .build();
 
                 mockMvc.perform(post("/api/transactions")
@@ -202,5 +210,22 @@ public class TransactionControllerTest {
                                 .content(objectMapper.writeValueAsString(request)))
                                 .andExpect(status().isNotFound())
                                 .andExpect(jsonPath("$.code", is(404)));
+        }
+
+        @Test
+        void createTransaction_InvalidPin() throws Exception {
+                TransactionRequest request = TransactionRequest.builder()
+                                .fromAccountId(account1.getId())
+                                .toAccountId(account2.getId())
+                                .amount(new BigDecimal("100"))
+                                .pin("000000") // Wrong PIN
+                                .build();
+
+                mockMvc.perform(post("/api/transactions")
+                                .header("Authorization", "Bearer " + token1)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)))
+                                .andExpect(status().isUnauthorized())
+                                .andExpect(jsonPath("$.code", is(401)));
         }
 }
