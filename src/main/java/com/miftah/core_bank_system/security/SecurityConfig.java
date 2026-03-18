@@ -25,7 +25,7 @@ public class SecurityConfig {
         };
 
         private static final String[] USER_WHITELIST = {
-                "/api/accounts/me"
+                "/api/accounts/me",
         };
 
         public SecurityConfig(JwtAuthenticationFilter jwtAuthFilter, AuthenticationProvider authenticationProvider) {
@@ -40,7 +40,7 @@ public class SecurityConfig {
                                 .authorizeHttpRequests(auth -> auth
                                                 .requestMatchers(SWAGGER_WHITELIST).permitAll()
 
-                                                .requestMatchers("/api/auth/**").permitAll()
+                                                .requestMatchers("/api/auth/register", "/api/auth/login").permitAll()
                                                 .requestMatchers("/api/users/**").hasRole("ADMIN")
                                                 .requestMatchers("/api/profiles/**").hasAnyRole("ADMIN", "USER")
 

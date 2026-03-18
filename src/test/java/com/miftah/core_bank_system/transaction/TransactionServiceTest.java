@@ -110,7 +110,8 @@ class TransactionServiceTest {
 
     @Test
     void createTransaction_FromAccountNotFound() {
-        when(accountRepository.findByIdForUpdate(fromAccount.getId())).thenReturn(Optional.empty());
+        lenient().when(accountRepository.findByIdForUpdate(fromAccount.getId())).thenReturn(Optional.empty());
+        lenient().when(accountRepository.findByIdForUpdate(toAccount.getId())).thenReturn(Optional.of(toAccount));
 
         assertThrows(ResponseStatusException.class, () -> transactionService.createTransaction(user, request));
 

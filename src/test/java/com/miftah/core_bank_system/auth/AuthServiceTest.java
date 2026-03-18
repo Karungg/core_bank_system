@@ -6,6 +6,7 @@ import com.miftah.core_bank_system.user.Role;
 import com.miftah.core_bank_system.user.User;
 import com.miftah.core_bank_system.user.UserRepository;
 import com.miftah.core_bank_system.user.UserResponse;
+import com.miftah.core_bank_system.exception.ResourceNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -96,5 +97,24 @@ class AuthServiceTest {
         assertNotNull(response);
         assertEquals("mock-token", response.getToken());
         verify(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
+    }
+
+    @Test
+    void me_Success() {
+        when(userRepository.findById(user.getId())).thenReturn(java.util.Optional.of(user));
+
+        UserResponse response = authService.me(user);
+
+        assertNotNull(response);
+        assertEquals(user.getUsername(), response.getUsername());
+        assertEquals(user.getId(), response.getId());
+    }
+
+    @Test
+    void me_UserNotFound_ThrowsException() {
+        when(userRepository.findById(user.getId())).thenReturn(java.util.Optional.empty());
+
+        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () -> authService.me(user));
+        assertEquals("id", exception.getFieldName());
     }
 }

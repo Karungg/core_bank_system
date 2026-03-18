@@ -20,7 +20,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.hamcrest.Matchers.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest
@@ -193,5 +193,40 @@ class AuthControllerTest {
 
         private void authServiceRegister(RegisterRequest request) {
                 authService.register(request);
+        }
+
+        @Test
+        void me_Success_ShouldReturnUserDetails() throws Exception {
+                String password = "password123";
+                RegisterRequest registerRequest = RegisterRequest.builder()
+                                .username("testme")
+                                .password(password)
+                                .build();
+                authServiceRegister(registerRequest);
+
+                LoginRequest loginRequest = LoginRequest.builder()
+                                .username("testme")
+                                .password(password)
+                                .build();
+
+                String token = authService.login(loginRequest).getToken();
+                String message = getMessage("success.me");
+
+                mockMvc.perform(get("/api/auth/me")
+                                .header("Authorization", "Bearer " + token)
+                                .contentType(MediaType.APPLICATION_JSON))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.code").value(200))
+                                .andExpect(jsonPath("$.message").value(message))
+                                .andExpect(jsonPath("$.data.username").value("testme"))
+                                .andExpect(jsonPath("$.data.id").exists())
+                                .andExpect(jsonPath("$.data.role").value("USER"));
+        }
+
+        @Test
+        void me_Unauthorized_ShouldReturnForbidden() throws Exception {
+                mockMvc.perform(get("/api/auth/me")
+                                .contentType(MediaType.APPLICATION_JSON))
+                                .andExpect(status().isForbidden());
         }
 }

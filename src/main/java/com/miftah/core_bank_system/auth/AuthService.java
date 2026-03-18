@@ -6,6 +6,7 @@ import com.miftah.core_bank_system.user.Role;
 import com.miftah.core_bank_system.user.User;
 import com.miftah.core_bank_system.user.UserRepository;
 import com.miftah.core_bank_system.user.UserResponse;
+import com.miftah.core_bank_system.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -71,6 +72,20 @@ public class AuthService {
 
         return TokenResponse.builder()
                 .token(jwtToken)
+                .build();
+    }
+
+    public UserResponse me(User currentUser) {
+        log.info("Fetching current user details for: {}", currentUser.getUsername());
+        User user = userRepository.findById(currentUser.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("User", currentUser.getId()));
+
+        return UserResponse.builder()
+                .id(user.getId())
+                .username(user.getUsername())
+                .role(user.getRole())
+                .createdAt(user.getCreatedAt())
+                .updatedAt(user.getUpdatedAt())
                 .build();
     }
 }

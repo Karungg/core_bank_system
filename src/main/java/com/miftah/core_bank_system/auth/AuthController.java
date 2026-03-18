@@ -14,6 +14,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import com.miftah.core_bank_system.user.User;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -44,5 +47,14 @@ public class AuthController {
                         HttpStatus.OK.value(),
                         messageSource.getMessage("success.login", null, LocaleContextHolder.getLocale()),
                         authService.login(request)));
+    }
+
+    @GetMapping(path = "/me", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<WebResponse<UserResponse>> me(@AuthenticationPrincipal    User user) {
+        return ResponseEntity.status(HttpStatus.OK).body(
+                WebResponse.success(
+                        HttpStatus.OK.value(),
+                        messageSource.getMessage("success.me", null, LocaleContextHolder.getLocale()),
+                        authService.me(user)));
     }
 }
