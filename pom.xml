@@ -208,12 +208,11 @@
 			<plugin>
 				<groupId>org.flywaydb</groupId>
 				<artifactId>flyway-maven-plugin</artifactId>
-				<version>11.20.2</version>
+				<version>${flyway.version}</version>
 				<configuration>
-					<user>root</user>
-					<password>password</password>
-					<url>jdbc:postgresql://localhost:5432/core_bank_system</url>
-					<cleanDisabled>false</cleanDisabled>
+					<user>${flyway.user}</user>
+					<password>${flyway.password}</password>
+					<url>${flyway.url}</url>
 				</configuration>
 			</plugin>
 		</plugins>
