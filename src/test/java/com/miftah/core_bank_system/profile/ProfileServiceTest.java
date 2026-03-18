@@ -1,6 +1,7 @@
 package com.miftah.core_bank_system.profile;
 
 import com.miftah.core_bank_system.exception.DuplicateResourceException;
+import com.miftah.core_bank_system.exception.ResourceNotFoundException;
 import com.miftah.core_bank_system.user.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -12,8 +13,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.util.Optional;
@@ -122,11 +121,11 @@ class ProfileServiceTest {
     void get_NotFound_ThrowsException() {
         when(profileRepository.findByUserId(user.getId())).thenReturn(Optional.empty());
 
-        ResponseStatusException exception = assertThrows(ResponseStatusException.class, () -> {
+        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () -> {
             profileService.get(user);
         });
 
-        assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
+        assertEquals("userId", exception.getFieldName());
     }
 
     @Test
@@ -200,6 +199,6 @@ class ProfileServiceTest {
         UUID profileId = UUID.randomUUID();
         when(profileRepository.findById(profileId)).thenReturn(Optional.empty());
 
-        assertThrows(ResponseStatusException.class, () -> profileService.getById(profileId));
+        assertThrows(ResourceNotFoundException.class, () -> profileService.getById(profileId));
     }
 }

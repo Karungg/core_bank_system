@@ -1,15 +1,14 @@
 package com.miftah.core_bank_system.profile;
 
 import com.miftah.core_bank_system.exception.DuplicateResourceException;
+import com.miftah.core_bank_system.exception.ResourceNotFoundException;
 import com.miftah.core_bank_system.user.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -18,18 +17,25 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@Transactional(readOnly = true)
 public class ProfileServiceImpl implements ProfileService {
 
     private final ProfileRepository profileRepository;
 
     @Override
-    @Transactional(readOnly = true)
     public ProfileResponse get(User user) {
         log.info("Fetching profile for user: {}", user.getUsername());
-        
-        Profile profile = profileRepository.findByUserId(user.getId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Profile not found"));
-        return toProfileResponse(profile);
+        return toProfileResponse(findProfileByUserIdOrThrow(user.getId()));
+    }
+
+    @Override
+    public ProfileResponse getById(UUID id) {
+        return toProfileResponse(findProfileByIdOrThrow(id));
+    }
+
+    @Override
+    public Page<ProfileResponse> getAll(Pageable pageable) {
+        return profileRepository.findAll(pageable).map(this::toProfileResponse);
     }
 
     @Override
@@ -41,19 +47,7 @@ public class ProfileServiceImpl implements ProfileService {
             throw new DuplicateResourceException("user", "User already has a profile");
         }
 
-        Map<String, String> errors = new HashMap<>();
-
-        if (profileRepository.existsByIdentityNumber(request.getIdentityNumber())) {
-            errors.put("identityNumber", "error.profile.identityNumber.duplicate");
-        }
-
-        if (profileRepository.existsByPhone(request.getPhone())) {
-            errors.put("phone", "error.profile.phone.duplicate");
-        }
-
-        if (!errors.isEmpty()) {
-            throw new DuplicateResourceException(errors);
-        }
+        validateUniqueProfileData(request, null);
 
         Profile profile = Profile.builder()
                 .user(user)
@@ -90,22 +84,9 @@ public class ProfileServiceImpl implements ProfileService {
     @Transactional
     public ProfileResponse update(User user, ProfileRequest request) {
         log.info("Updating profile for user: {}", user.getUsername());
-        Profile profile = profileRepository.findByUserId(user.getId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Profile not found"));
-
-        Map<String, String> errors = new HashMap<>();
-
-        if (profileRepository.existsByIdentityNumberAndIdNot(request.getIdentityNumber(), profile.getId())) {
-            errors.put("identityNumber", "error.profile.identityNumber.duplicate");
-        }
-
-        if (profileRepository.existsByPhoneAndIdNot(request.getPhone(), profile.getId())) {
-            errors.put("phone", "error.profile.phone.duplicate");
-        }
-
-        if (!errors.isEmpty()) {
-            throw new DuplicateResourceException(errors);
-        }
+        
+        Profile profile = findProfileByUserIdOrThrow(user.getId());
+        validateUniqueProfileData(request, profile.getId());
 
         profile.setType(request.getType());
         profile.setExpiryDate(request.getExpiryDate());
@@ -133,6 +114,42 @@ public class ProfileServiceImpl implements ProfileService {
         log.info("Profile updated successfully for user: {}", user.getUsername());
 
         return toProfileResponse(profile);
+    }
+
+    // ========== Private Helpers ==========
+
+    private Profile findProfileByIdOrThrow(UUID id) {
+        return profileRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Profile", id));
+    }
+
+    private Profile findProfileByUserIdOrThrow(UUID userId) {
+        return profileRepository.findByUserId(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Profile", "userId", userId));
+    }
+
+    private void validateUniqueProfileData(ProfileRequest request, UUID excludeProfileId) {
+        Map<String, String> errors = new HashMap<>();
+
+        boolean identityDuplicate = excludeProfileId == null ?
+                profileRepository.existsByIdentityNumber(request.getIdentityNumber()) :
+                profileRepository.existsByIdentityNumberAndIdNot(request.getIdentityNumber(), excludeProfileId);
+
+        if (identityDuplicate) {
+            errors.put("identityNumber", "error.profile.identityNumber.duplicate");
+        }
+
+        boolean phoneDuplicate = excludeProfileId == null ?
+                profileRepository.existsByPhone(request.getPhone()) :
+                profileRepository.existsByPhoneAndIdNot(request.getPhone(), excludeProfileId);
+
+        if (phoneDuplicate) {
+            errors.put("phone", "error.profile.phone.duplicate");
+        }
+
+        if (!errors.isEmpty()) {
+            throw new DuplicateResourceException(errors);
+        }
     }
 
     private ProfileResponse toProfileResponse(Profile profile) {
@@ -164,20 +181,5 @@ public class ProfileServiceImpl implements ProfileService {
                 .createdAt(profile.getCreatedAt())
                 .updatedAt(profile.getUpdatedAt())
                 .build();
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public Page<ProfileResponse> getAll(Pageable pageable) {
-        return profileRepository.findAll(pageable)
-                .map(this::toProfileResponse);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public ProfileResponse getById(UUID id) {
-        Profile profile = profileRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Profile not found"));
-        return toProfileResponse(profile);
     }
 }
