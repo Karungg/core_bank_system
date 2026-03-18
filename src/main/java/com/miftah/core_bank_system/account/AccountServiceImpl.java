@@ -1,9 +1,9 @@
 package com.miftah.core_bank_system.account;
 
 import com.miftah.core_bank_system.config.EncryptionUtil;
+import com.miftah.core_bank_system.exception.ResourceNotFoundException;
 import com.miftah.core_bank_system.user.User;
 import com.miftah.core_bank_system.user.UserRepository;
-import com.miftah.core_bank_system.user.UserService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -11,8 +11,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.math.BigDecimal;
@@ -34,17 +32,14 @@ public class AccountServiceImpl implements AccountService {
     private final AccountGeneratorUtil accountGeneratorUtil;
 
     private final EncryptionUtil encryptionUtil;
-    
+
     @Override
-    @Transactional(readOnly = true)
     public AccountResponse getById(UUID id) {
         log.info("Fetching account by ID: {}", id);
-        Account account = findAccountByIdOrThrow(id);
-        return toResponse(account);
+        return toResponse(findAccountByIdOrThrow(id));
     }
 
     @Override
-    @Transactional(readOnly = true)
     public Page<AccountResponse> getAll(Pageable pageable) {
         log.info("Fetching all accounts with pageable: {}", pageable);
         return accountRepository.findAll(pageable)
@@ -52,14 +47,12 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
-    @Transactional(readOnly = true)
     public AccountResponse getByUsername(String username) {
-        log.info("fetching account by username: {}", username);
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
-            
+        log.info("Fetching account by username: {}", username);
+
+        User user = findUserByUsernameOrThrow(username);
         Account account = accountRepository.findByUserId(user.getId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Account not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Account", "userId", user.getId()));
 
         return toResponse(account);
     }
@@ -69,29 +62,27 @@ public class AccountServiceImpl implements AccountService {
     public AccountResponse create(AccountRequest request) {
         log.info("Creating account for user: {}", request.getUserId());
 
-        User user = userRepository.findById(request.getUserId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+        User user = findUserByIdOrThrow(request.getUserId());
 
-        String accountNumber = accountGeneratorUtil.generateAccountNumber();
-        String cardNumber = accountGeneratorUtil.generateCardNumber();
-        String cvv = accountGeneratorUtil.generateCvv();
-
+        String accountNumber;
         do {
             accountNumber = accountGeneratorUtil.generateAccountNumber();
         } while (accountRepository.existsByAccountNumber(accountNumber));
 
+        String cardNumber;
         do {
             cardNumber = accountGeneratorUtil.generateCardNumber();
         } while (accountRepository.existsByCardNumber(cardNumber));
 
+        String cvv = accountGeneratorUtil.generateCvv();
+
         Account account = Account.builder()
                 .user(user)
                 .accountNumber(accountNumber)
-                .balance(BigDecimal.valueOf(0))
+                .balance(BigDecimal.ZERO)
                 .pin(passwordEncoder.encode(request.getPin()))
                 .cardNumber(cardNumber)
                 .cvv(encryptionUtil.encrypt(cvv))
-                .expiredDate(LocalDate.now())
                 .type(request.getType())
                 .expiredDate(LocalDate.now().plusYears(5))
                 .build();
@@ -108,9 +99,7 @@ public class AccountServiceImpl implements AccountService {
         log.info("Updating account ID: {}", id);
 
         Account account = findAccountByIdOrThrow(id);
-
-        User user = userRepository.findById(request.getUserId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+        User user = findUserByIdOrThrow(request.getUserId());
 
         account.setUser(user);
         account.setPin(passwordEncoder.encode(request.getPin()));
@@ -131,9 +120,21 @@ public class AccountServiceImpl implements AccountService {
         log.info("Account deleted successfully: {}", id);
     }
 
+    // ========== Private Helpers ==========
+
     private Account findAccountByIdOrThrow(UUID id) {
         return accountRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Account not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Account", id));
+    }
+
+    private User findUserByIdOrThrow(UUID id) {
+        return userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User", id));
+    }
+
+    private User findUserByUsernameOrThrow(String username) {
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "username", username));
     }
 
     private AccountResponse toResponse(Account account) {

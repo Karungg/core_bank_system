@@ -1,6 +1,7 @@
 package com.miftah.core_bank_system.account;
 
 import com.miftah.core_bank_system.config.EncryptionUtil;
+import com.miftah.core_bank_system.exception.ResourceNotFoundException;
 import com.miftah.core_bank_system.user.User;
 import com.miftah.core_bank_system.user.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -13,7 +14,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.util.Collections;
@@ -100,7 +100,7 @@ class AccountServiceImplTest {
     void create_UserNotFound() {
         when(userRepository.findById(accountRequest.getUserId())).thenReturn(Optional.empty());
 
-        assertThrows(ResponseStatusException.class, () -> accountService.create(accountRequest));
+        assertThrows(ResourceNotFoundException.class, () -> accountService.create(accountRequest));
         verify(accountRepository, never()).save(any(Account.class));
     }
 
@@ -139,7 +139,7 @@ class AccountServiceImplTest {
         UUID id = UUID.randomUUID();
         when(accountRepository.findById(id)).thenReturn(Optional.empty());
 
-        assertThrows(ResponseStatusException.class, () -> accountService.getById(id));
+        assertThrows(ResourceNotFoundException.class, () -> accountService.getById(id));
     }
 
     @Test
