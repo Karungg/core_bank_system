@@ -11,7 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.time.Instant;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -28,14 +28,28 @@ public class TransactionServiceImpl implements TransactionService {
         log.info("Creating transaction from account: {} to account: {}", request.getFromAccountId(),
                 request.getToAccountId());
 
-        Account fromAccount = accountRepository.findById(request.getFromAccountId())
+        // Lock ordering: always lock the account with the smaller UUID first to prevent deadlocks
+        UUID firstLockId;
+        UUID secondLockId;
+        if (request.getFromAccountId().compareTo(request.getToAccountId()) < 0) {
+            firstLockId = request.getFromAccountId();
+            secondLockId = request.getToAccountId();
+        } else {
+            firstLockId = request.getToAccountId();
+            secondLockId = request.getFromAccountId();
+        }
+
+        // Acquire pessimistic locks in consistent order
+        Account firstLocked = accountRepository.findByIdForUpdate(firstLockId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "error.transaction.account.notFound"));
+        Account secondLocked = accountRepository.findByIdForUpdate(secondLockId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "error.transaction.account.notFound"));
 
-        Account toAccount = accountRepository.findById(request.getToAccountId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "error.transaction.account.notFound"));
+        // Assign to named variables based on role
+        Account fromAccount = request.getFromAccountId().equals(firstLockId) ? firstLocked : secondLocked;
+        Account toAccount = request.getToAccountId().equals(firstLockId) ? firstLocked : secondLocked;
 
-        // Secure transaction: Check if the fromAccount belongs to the authenticated
-        // user
+        // Secure transaction: Check if the fromAccount belongs to the authenticated user
         if (!fromAccount.getUser().getId().equals(user.getId())) {
             log.warn("Unauthorized transaction attempt by user: {}", user.getUsername());
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "error.transaction.unauthorized");
@@ -70,8 +84,6 @@ public class TransactionServiceImpl implements TransactionService {
                 .amount(request.getAmount())
                 .fromAccount(fromAccount)
                 .toAccount(toAccount)
-                .createdAt(Instant.now())
-                .updatedAt(Instant.now())
                 .build();
         transactionRepository.save(transaction);
 

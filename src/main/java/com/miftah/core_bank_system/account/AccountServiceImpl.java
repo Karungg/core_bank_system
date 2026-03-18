@@ -1,5 +1,6 @@
 package com.miftah.core_bank_system.account;
 
+import com.miftah.core_bank_system.config.EncryptionUtil;
 import com.miftah.core_bank_system.user.User;
 import com.miftah.core_bank_system.user.UserRepository;
 import com.miftah.core_bank_system.user.UserService;
@@ -31,6 +32,8 @@ public class AccountServiceImpl implements AccountService {
     private final PasswordEncoder passwordEncoder;
 
     private final AccountGeneratorUtil accountGeneratorUtil;
+
+    private final EncryptionUtil encryptionUtil;
     
     @Override
     @Transactional(readOnly = true)
@@ -87,7 +90,7 @@ public class AccountServiceImpl implements AccountService {
                 .balance(BigDecimal.valueOf(0))
                 .pin(passwordEncoder.encode(request.getPin()))
                 .cardNumber(cardNumber)
-                .cvv(cvv)
+                .cvv(encryptionUtil.encrypt(cvv))
                 .expiredDate(LocalDate.now())
                 .type(request.getType())
                 .expiredDate(LocalDate.now().plusYears(5))

@@ -105,6 +105,7 @@ public class TransactionControllerTest {
                                 .cvv("123")
                                 .pin(passwordEncoder.encode("123456"))
                                 .type(AccountType.SILVER)
+                                .expiredDate(LocalDate.now().plusYears(5))
                                 .createdAt(LocalDate.now())
                                 .updatedAt(LocalDate.now())
                                 .build();
@@ -119,6 +120,7 @@ public class TransactionControllerTest {
                                 .cvv("456")
                                 .pin(passwordEncoder.encode("654321"))
                                 .type(AccountType.GOLD)
+                                .expiredDate(LocalDate.now().plusYears(5))
                                 .createdAt(LocalDate.now())
                                 .updatedAt(LocalDate.now())
                                 .build();

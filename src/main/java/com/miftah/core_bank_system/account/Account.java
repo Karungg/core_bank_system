@@ -60,7 +60,7 @@ public class Account {
     @Column(name = "card_number", unique = true, length = 16, nullable = false)
     private String cardNumber;
 
-    @Column(length = 3, nullable = false)
+    @Column(length = 255, nullable = false)
     private String cvv;
 
     @Column(name = "expired_date", nullable = false)

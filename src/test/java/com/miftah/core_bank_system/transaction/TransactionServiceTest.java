@@ -80,8 +80,8 @@ class TransactionServiceTest {
 
     @Test
     void createTransaction_Success() {
-        when(accountRepository.findById(fromAccount.getId())).thenReturn(Optional.of(fromAccount));
-        when(accountRepository.findById(toAccount.getId())).thenReturn(Optional.of(toAccount));
+        when(accountRepository.findByIdForUpdate(fromAccount.getId())).thenReturn(Optional.of(fromAccount));
+        when(accountRepository.findByIdForUpdate(toAccount.getId())).thenReturn(Optional.of(toAccount));
         when(passwordEncoder.matches(request.getPin(), fromAccount.getPin())).thenReturn(true);
         when(transactionRepository.save(any(Transaction.class))).thenAnswer(invocation -> {
             Transaction transaction = invocation.getArgument(0);
@@ -110,7 +110,7 @@ class TransactionServiceTest {
 
     @Test
     void createTransaction_FromAccountNotFound() {
-        when(accountRepository.findById(fromAccount.getId())).thenReturn(Optional.empty());
+        when(accountRepository.findByIdForUpdate(fromAccount.getId())).thenReturn(Optional.empty());
 
         assertThrows(ResponseStatusException.class, () -> transactionService.createTransaction(user, request));
 
@@ -120,8 +120,8 @@ class TransactionServiceTest {
 
     @Test
     void createTransaction_ToAccountNotFound() {
-        when(accountRepository.findById(fromAccount.getId())).thenReturn(Optional.of(fromAccount));
-        when(accountRepository.findById(toAccount.getId())).thenReturn(Optional.empty());
+        lenient().when(accountRepository.findByIdForUpdate(fromAccount.getId())).thenReturn(Optional.of(fromAccount));
+        lenient().when(accountRepository.findByIdForUpdate(toAccount.getId())).thenReturn(Optional.empty());
 
         assertThrows(ResponseStatusException.class, () -> transactionService.createTransaction(user, request));
 
@@ -133,8 +133,8 @@ class TransactionServiceTest {
     void createTransaction_Unauthorized() {
         // fromAccount belongs to otherUser, but we try to transact as 'user'
         fromAccount.setUser(otherUser);
-        when(accountRepository.findById(fromAccount.getId())).thenReturn(Optional.of(fromAccount));
-        when(accountRepository.findById(toAccount.getId())).thenReturn(Optional.of(toAccount));
+        when(accountRepository.findByIdForUpdate(fromAccount.getId())).thenReturn(Optional.of(fromAccount));
+        when(accountRepository.findByIdForUpdate(toAccount.getId())).thenReturn(Optional.of(toAccount));
 
         assertThrows(ResponseStatusException.class, () -> transactionService.createTransaction(user, request));
 
@@ -145,8 +145,8 @@ class TransactionServiceTest {
     @Test
     void createTransaction_InsufficientBalance() {
         request.setAmount(new BigDecimal("2000")); // Balance is 1000
-        when(accountRepository.findById(fromAccount.getId())).thenReturn(Optional.of(fromAccount));
-        when(accountRepository.findById(toAccount.getId())).thenReturn(Optional.of(toAccount));
+        when(accountRepository.findByIdForUpdate(fromAccount.getId())).thenReturn(Optional.of(fromAccount));
+        when(accountRepository.findByIdForUpdate(toAccount.getId())).thenReturn(Optional.of(toAccount));
         when(passwordEncoder.matches(request.getPin(), fromAccount.getPin())).thenReturn(true);
 
         assertThrows(ResponseStatusException.class, () -> transactionService.createTransaction(user, request));
@@ -157,8 +157,8 @@ class TransactionServiceTest {
 
     @Test
     void createTransaction_InvalidPin() {
-        when(accountRepository.findById(fromAccount.getId())).thenReturn(Optional.of(fromAccount));
-        when(accountRepository.findById(toAccount.getId())).thenReturn(Optional.of(toAccount));
+        when(accountRepository.findByIdForUpdate(fromAccount.getId())).thenReturn(Optional.of(fromAccount));
+        when(accountRepository.findByIdForUpdate(toAccount.getId())).thenReturn(Optional.of(toAccount));
         when(passwordEncoder.matches(request.getPin(), fromAccount.getPin())).thenReturn(false);
 
         assertThrows(ResponseStatusException.class, () -> transactionService.createTransaction(user, request));

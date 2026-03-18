@@ -1,5 +1,6 @@
 package com.miftah.core_bank_system.account;
 
+import com.miftah.core_bank_system.config.EncryptionUtil;
 import com.miftah.core_bank_system.user.User;
 import com.miftah.core_bank_system.user.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,6 +39,9 @@ class AccountServiceImplTest {
 
     @Mock
     private AccountGeneratorUtil accountGeneratorUtil;
+
+    @Mock
+    private EncryptionUtil encryptionUtil;
 
     @InjectMocks
     private AccountServiceImpl accountService;
@@ -81,6 +85,7 @@ class AccountServiceImplTest {
         when(accountRepository.existsByAccountNumber(anyString())).thenReturn(false);
         when(accountRepository.existsByCardNumber(anyString())).thenReturn(false);
         when(passwordEncoder.encode(anyString())).thenReturn("encoded_pin");
+        when(encryptionUtil.encrypt(anyString())).thenReturn("encrypted_cvv");
         when(accountRepository.save(any(Account.class))).thenReturn(account);
 
         AccountResponse response = accountService.create(accountRequest);
@@ -108,6 +113,7 @@ class AccountServiceImplTest {
         lenient().when(accountRepository.existsByAccountNumber("1111111111")).thenReturn(true);
         when(accountRepository.existsByCardNumber(anyString())).thenReturn(false);
         when(passwordEncoder.encode(anyString())).thenReturn("encoded_pin");
+        when(encryptionUtil.encrypt(anyString())).thenReturn("encrypted_cvv");
         when(accountRepository.save(any(Account.class))).thenReturn(account);
 
         AccountResponse response = accountService.create(accountRequest);
