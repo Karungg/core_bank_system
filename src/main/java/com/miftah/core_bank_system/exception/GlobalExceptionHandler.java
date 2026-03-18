@@ -94,4 +94,12 @@ public class GlobalExceptionHandler {
                 WebResponse.error(HttpStatus.UNAUTHORIZED.value(), message, exception.getMessage())
         );
     }
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<WebResponse<String>> resourceNotFoundException(ResourceNotFoundException exception) {
+        String message = messageSource.getMessage("error.not-found", null, LocaleContextHolder.getLocale());
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+                WebResponse.error(HttpStatus.NOT_FOUND.value(), message, exception.getMessage())
+        );
+    }
 }

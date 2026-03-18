@@ -2,6 +2,7 @@ package com.miftah.core_bank_system.user;
 
 import com.miftah.core_bank_system.auth.RegisterRequest;
 import com.miftah.core_bank_system.exception.DuplicateResourceException;
+import com.miftah.core_bank_system.exception.ResourceNotFoundException;
 import com.miftah.core_bank_system.profile.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -15,7 +16,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -181,7 +181,7 @@ class UserServiceTest {
 
         when(userRepository.findById(userId)).thenReturn(Optional.empty());
 
-        assertThrows(ResponseStatusException.class, () -> userService.updateUser(userId, updateRequest));
+        assertThrows(ResourceNotFoundException.class, () -> userService.updateUser(userId, updateRequest));
     }
 
     @Test
@@ -221,7 +221,7 @@ class UserServiceTest {
 
         when(userRepository.findById(userId)).thenReturn(Optional.empty());
 
-        assertThrows(ResponseStatusException.class,
+        assertThrows(ResourceNotFoundException.class,
                 () -> userService.updateAdmin(userId, updateRequest));
     }
 
@@ -243,9 +243,9 @@ class UserServiceTest {
 
         when(userRepository.findById(userId)).thenReturn(Optional.empty());
 
-        assertThrows(ResponseStatusException.class,
+        assertThrows(ResourceNotFoundException.class,
                 () -> userService.deleteAdmin(userId));
-        assertThrows(ResponseStatusException.class,
+        assertThrows(ResourceNotFoundException.class,
                 () -> userService.deleteAdmin(userId));
     }
 
@@ -283,6 +283,6 @@ class UserServiceTest {
         UUID userId = UUID.randomUUID();
         when(userRepository.findById(userId)).thenReturn(Optional.empty());
 
-        assertThrows(ResponseStatusException.class, () -> userService.getById(userId));
+        assertThrows(ResourceNotFoundException.class, () -> userService.getById(userId));
     }
 }
