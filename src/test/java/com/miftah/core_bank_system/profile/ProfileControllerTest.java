@@ -147,12 +147,10 @@ public class ProfileControllerTest {
                                 .andExpect(status().isBadRequest())
                                 .andExpect(jsonPath("$.code").value(400))
                                 .andExpect(jsonPath("$.message").value(getMessage("error.validation")))
-                                .andExpect(jsonPath("$.errors").value(
-                                                containsString("identityNumber: " + getMessage(
-                                                                "error.profile.identityNumber.duplicate"))))
-                                .andExpect(jsonPath("$.errors")
-                                                .value(containsString("phone: "
-                                                                + getMessage("error.profile.phone.duplicate"))));
+                                .andExpect(jsonPath("$.errors.identityNumber[0]").value(
+                                                getMessage("error.profile.identityNumber.duplicate")))
+                                .andExpect(jsonPath("$.errors.phone[0]")
+                                                .value(getMessage("error.profile.phone.duplicate")));
         }
 
         @Test

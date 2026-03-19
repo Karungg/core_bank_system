@@ -10,8 +10,14 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.validation.FieldError;
+import jakarta.validation.ConstraintViolation;
+import lombok.extern.slf4j.Slf4j;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -22,25 +28,36 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
-    public ResponseEntity<WebResponse<String>> constraintViolationException(ConstraintViolationException exception) {
+    public ResponseEntity<WebResponse<Object>> constraintViolationException(ConstraintViolationException exception) {
         String message = messageSource.getMessage("error.constraint", null, LocaleContextHolder.getLocale());
         
+        Map<String, List<String>> errors = exception.getConstraintViolations()
+                .stream()
+                .collect(Collectors.groupingBy(
+                        violation -> {
+                            String path = violation.getPropertyPath().toString();
+                            int lastDotIdx = path.lastIndexOf('.');
+                            return lastDotIdx != -1 ? path.substring(lastDotIdx + 1) : path;
+                        },
+                        Collectors.mapping(ConstraintViolation::getMessage, Collectors.toList())
+                ));
+
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                WebResponse.error(HttpStatus.BAD_REQUEST.value(), message, exception.getMessage())
+                WebResponse.error(HttpStatus.BAD_REQUEST.value(), message, errors)
         );
     }
 
-
-
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<WebResponse<String>> methodArgumentNotValidException(MethodArgumentNotValidException exception) {
+    public ResponseEntity<WebResponse<Object>> methodArgumentNotValidException(MethodArgumentNotValidException exception) {
         String message = messageSource.getMessage("error.validation", null, LocaleContextHolder.getLocale());
         
-        String errors = exception.getBindingResult()
+        Map<String, List<String>> errors = exception.getBindingResult()
                 .getFieldErrors()
                 .stream()
-                .map(error -> error.getField() + ": " + error.getDefaultMessage())
-                .collect(Collectors.joining(", "));
+                .collect(Collectors.groupingBy(
+                        FieldError::getField,
+                        Collectors.mapping(FieldError::getDefaultMessage, Collectors.toList())
+                ));
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
                 WebResponse.error(HttpStatus.BAD_REQUEST.value(), message, errors)
@@ -49,37 +66,42 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<WebResponse<String>> unknownException(Exception exception) {
+        log.error("Unhandled exception: ", exception);
         String message = messageSource.getMessage("error.internal", null, LocaleContextHolder.getLocale());
+        String secureErrorFeedback = "An unexpected error occurred. Please contact support.";
         
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
-                WebResponse.error(HttpStatus.INTERNAL_SERVER_ERROR.value(), message, exception.getMessage())
+                WebResponse.error(HttpStatus.INTERNAL_SERVER_ERROR.value(), message, secureErrorFeedback)
         );
     }
 
     @ExceptionHandler(DuplicateResourceException.class)
-    public ResponseEntity<WebResponse<String>> duplicateResourceException(DuplicateResourceException exception) {
+    public ResponseEntity<WebResponse<Object>> duplicateResourceException(DuplicateResourceException exception) {
         String message = messageSource.getMessage("error.validation", null, LocaleContextHolder.getLocale());
-        String errorMessage;
+        Map<String, List<String>> errors;
 
         if (exception.getErrors() != null && !exception.getErrors().isEmpty()) {
-            errorMessage = exception.getErrors()
+            errors = exception.getErrors()
                     .entrySet()
                     .stream()
-                    .map(entry -> entry.getKey() + ": " +
-                            messageSource.getMessage(entry.getValue(), null, LocaleContextHolder.getLocale()))
-                    .collect(Collectors.joining(", "));
+                    .collect(Collectors.toMap(
+                            Map.Entry::getKey,
+                            entry -> List.of(messageSource.getMessage(entry.getValue(), null, LocaleContextHolder.getLocale()))
+                    ));
         } else {
-            errorMessage = exception.getField() + ": " +
-                    messageSource.getMessage(exception.getMessageKey(), null, LocaleContextHolder.getLocale());
+            errors = Map.of(
+                    exception.getField(),
+                    List.of(messageSource.getMessage(exception.getMessageKey(), null, LocaleContextHolder.getLocale()))
+            );
         }
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                WebResponse.error(HttpStatus.BAD_REQUEST.value(), message, errorMessage)
-        );
+                WebResponse.error(HttpStatus.BAD_REQUEST.value(), message, errors));
     }
 
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<WebResponse<String>> badCredentialsException(BadCredentialsException exception) {
+        log.warn("Bad credentials attempt: {}", exception.getMessage());
         String message = messageSource.getMessage("error.bad-credentials", null, LocaleContextHolder.getLocale());
         
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(

@@ -109,7 +109,7 @@ class AuthControllerTest {
                                 .andExpect(status().isCreated());
                 
                 String message = getMessage("error.validation");
-                String expectedDuplicateError = "username: " + getMessage("error.username.duplicate");
+                String expectedDuplicateError = getMessage("error.username.duplicate");
 
                 // Try to register again
                 mockMvc.perform(post("/api/auth/register")
@@ -118,8 +118,7 @@ class AuthControllerTest {
                                 .andExpect(status().isBadRequest())
                                 .andExpect(jsonPath("$.code").value(400))
                                 .andExpect(jsonPath("$.message").value(message))
-                                .andExpect(jsonPath("$.errors")
-                                                .value(containsString(expectedDuplicateError)));
+                                .andExpect(jsonPath("$.errors.username[0]").value(expectedDuplicateError));
         }
 
         @Test

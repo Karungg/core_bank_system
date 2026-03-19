@@ -19,7 +19,7 @@ public class WebResponse<T> {
 
     private T data;
 
-    private String errors;
+    private Object errors;
 
     public static <T> WebResponse<T> success(Integer code, String message, T data) {
         return WebResponse.<T>builder()
@@ -29,7 +29,7 @@ public class WebResponse<T> {
                 .build();
     }
 
-    public static <T> WebResponse<T> error(Integer code, String message, String errors) {
+    public static <T> WebResponse<T> error(Integer code, String message, Object errors) {
         return WebResponse.<T>builder()
                 .code(code)
                 .message(message)
