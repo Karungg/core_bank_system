@@ -161,4 +161,19 @@ class AuthServiceTest {
         TokenRefreshException exception = assertThrows(TokenRefreshException.class, () -> authService.refreshToken(refreshRequest));
         assertEquals("invalid-refresh-token", exception.getToken());
     }
+
+    @Test
+    void logout_Success() {
+        TokenRefreshRequest refreshRequest = new TokenRefreshRequest("valid-refresh-token");
+        RefreshToken mockRefreshToken = RefreshToken.builder()
+                .user(user)
+                .token("valid-refresh-token")
+                .build();
+
+        when(refreshTokenService.findByToken("valid-refresh-token")).thenReturn(java.util.Optional.of(mockRefreshToken));
+
+        authService.logout(refreshRequest);
+
+        verify(refreshTokenService).deleteToken(mockRefreshToken);
+    }
 }

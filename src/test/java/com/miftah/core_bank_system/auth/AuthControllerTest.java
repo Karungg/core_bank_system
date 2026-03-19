@@ -283,4 +283,45 @@ class AuthControllerTest {
                         .andExpect(jsonPath("$.code").value(403))
                         .andExpect(jsonPath("$.message").exists());
         }
+
+        @Test
+        void logout_Success_ShouldReturnOk() throws Exception {
+                String password = "password123";
+                RegisterRequest registerRequest = RegisterRequest.builder()
+                        .username("testlogout")
+                        .password(password)
+                        .build();
+                authServiceRegister(registerRequest);
+
+                LoginRequest loginRequest = LoginRequest.builder()
+                        .username("testlogout")
+                        .password(password)
+                        .build();
+
+                String jsonResponse = mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(loginRequest)))
+                        .andReturn().getResponse().getContentAsString();
+
+                tools.jackson.databind.JsonNode rootResource = objectMapper.readTree(jsonResponse);
+                String refreshToken = rootResource.get("data").get("refreshToken").asText();
+
+                TokenRefreshRequest logoutRequest = TokenRefreshRequest.builder()
+                        .refreshToken(refreshToken)
+                        .build();
+
+                // Call logout
+                mockMvc.perform(post("/api/auth/logout")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(logoutRequest)))
+                        .andExpect(status().isOk())
+                        .andExpect(jsonPath("$.code").value(200))
+                        .andExpect(jsonPath("$.message").value("Logged out successfully"));
+                        
+                // Verify the refresh token config no longer exists
+                mockMvc.perform(post("/api/auth/refresh")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(logoutRequest)))
+                        .andExpect(status().isForbidden());
+        }
 }

@@ -110,6 +110,17 @@ public class AuthService {
                 .orElseThrow(() -> new TokenRefreshException(requestRefreshToken, "Refresh token is not in database!"));
     }
 
+    @Transactional
+    public void logout(TokenRefreshRequest request) {
+        log.info("Processing logout request");
+        String requestRefreshToken = request.getRefreshToken();
+        
+        refreshTokenService.findByToken(requestRefreshToken)
+                .ifPresent(refreshTokenService::deleteToken);
+        
+        log.info("Logout successful, refresh token deleted");
+    }
+
     public UserResponse me(User currentUser) {
         log.info("Fetching current user details for: {}", currentUser.getUsername());
         User user = userRepository.findById(currentUser.getId())

@@ -67,4 +67,16 @@ public class AuthController {
                         "Token refreshed successfully",
                         authService.refreshToken(request)));
     }
+
+    @PostMapping(path = "/logout", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<WebResponse<String>> logout(@RequestBody @Valid TokenRefreshRequest request) {
+        
+        authService.logout(request);
+
+        return ResponseEntity.status(HttpStatus.OK).body(
+                WebResponse.success(
+                        HttpStatus.OK.value(),
+                        "Logged out successfully",
+                        null));
+    }
 }

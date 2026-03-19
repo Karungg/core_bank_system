@@ -40,7 +40,7 @@ public class SecurityConfig {
                                 .authorizeHttpRequests(auth -> auth
                                                 .requestMatchers(SWAGGER_WHITELIST).permitAll()
 
-                                                .requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/refresh").permitAll()
+                                                .requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/refresh", "/api/auth/logout").permitAll()
                                                 .requestMatchers("/api/users/**").hasRole("ADMIN")
                                                 .requestMatchers("/api/profiles/**").hasAnyRole("ADMIN", "USER")
 
