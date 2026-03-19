@@ -51,7 +51,7 @@ public class Account {
     @Column(name = "account_number", unique = true, length = 10, nullable = false)
     private String accountNumber;
 
-    @Column(precision = 12, scale = 0, nullable = false)
+    @Column(precision = 12, scale = 2, nullable = false)
     private BigDecimal balance;
 
     @Column(length = 255, nullable = false)
