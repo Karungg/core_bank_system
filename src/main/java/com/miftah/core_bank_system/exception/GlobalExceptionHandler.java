@@ -10,7 +10,6 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.web.server.ResponseStatusException;
 import java.util.stream.Collectors;
 
 @RestControllerAdvice
@@ -31,14 +30,7 @@ public class GlobalExceptionHandler {
         );
     }
 
-    @ExceptionHandler(ResponseStatusException.class)
-    public ResponseEntity<WebResponse<String>> apiException(ResponseStatusException exception) {
-        String message = messageSource.getMessage("error.api", null, LocaleContextHolder.getLocale());
-        
-        return ResponseEntity.status(exception.getStatusCode()).body(
-                WebResponse.error(exception.getStatusCode().value(), message, exception.getReason())
-        );
-    }
+
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<WebResponse<String>> methodArgumentNotValidException(MethodArgumentNotValidException exception) {
@@ -100,6 +92,38 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
                 WebResponse.error(HttpStatus.NOT_FOUND.value(), message, exception.getMessage())
+        );
+    }
+
+    @ExceptionHandler(UnauthorizedTransactionException.class)
+    public ResponseEntity<WebResponse<String>> unauthorizedTransactionException(UnauthorizedTransactionException exception) {
+        String message = messageSource.getMessage(exception.getMessageKey(), null, LocaleContextHolder.getLocale());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(
+                WebResponse.error(HttpStatus.FORBIDDEN.value(), "Forbidden", message)
+        );
+    }
+
+    @ExceptionHandler(SameAccountTransactionException.class)
+    public ResponseEntity<WebResponse<String>> sameAccountTransactionException(SameAccountTransactionException exception) {
+        String message = messageSource.getMessage(exception.getMessageKey(), null, LocaleContextHolder.getLocale());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                WebResponse.error(HttpStatus.BAD_REQUEST.value(), "Bad Request", message)
+        );
+    }
+
+    @ExceptionHandler(InvalidPinException.class)
+    public ResponseEntity<WebResponse<String>> invalidPinException(InvalidPinException exception) {
+        String message = messageSource.getMessage(exception.getMessageKey(), null, LocaleContextHolder.getLocale());
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
+                WebResponse.error(HttpStatus.UNAUTHORIZED.value(), "Unauthorized", message)
+        );
+    }
+
+    @ExceptionHandler(InsufficientBalanceException.class)
+    public ResponseEntity<WebResponse<String>> insufficientBalanceException(InsufficientBalanceException exception) {
+        String message = messageSource.getMessage(exception.getMessageKey(), null, LocaleContextHolder.getLocale());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                WebResponse.error(HttpStatus.BAD_REQUEST.value(), "Bad Request", message)
         );
     }
 }

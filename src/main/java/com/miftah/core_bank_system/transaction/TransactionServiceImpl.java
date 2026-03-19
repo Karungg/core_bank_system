@@ -5,11 +5,14 @@ import com.miftah.core_bank_system.account.AccountRepository;
 import com.miftah.core_bank_system.user.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
+import com.miftah.core_bank_system.exception.InsufficientBalanceException;
+import com.miftah.core_bank_system.exception.InvalidPinException;
+import com.miftah.core_bank_system.exception.ResourceNotFoundException;
+import com.miftah.core_bank_system.exception.SameAccountTransactionException;
+import com.miftah.core_bank_system.exception.UnauthorizedTransactionException;
 
 import java.util.UUID;
 
@@ -41,9 +44,9 @@ public class TransactionServiceImpl implements TransactionService {
 
         // Acquire pessimistic locks in consistent order
         Account firstLocked = accountRepository.findByIdForUpdate(firstLockId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "error.transaction.account.notFound"));
+                .orElseThrow(() -> new ResourceNotFoundException("Account", "id", firstLockId));
         Account secondLocked = accountRepository.findByIdForUpdate(secondLockId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "error.transaction.account.notFound"));
+                .orElseThrow(() -> new ResourceNotFoundException("Account", "id", secondLockId));
 
         // Assign to named variables based on role
         Account fromAccount = request.getFromAccountId().equals(firstLockId) ? firstLocked : secondLocked;
@@ -52,24 +55,24 @@ public class TransactionServiceImpl implements TransactionService {
         // Secure transaction: Check if the fromAccount belongs to the authenticated user
         if (!fromAccount.getUser().getId().equals(user.getId())) {
             log.warn("Unauthorized transaction attempt by user: {}", user.getUsername());
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "error.transaction.unauthorized");
+            throw new UnauthorizedTransactionException("error.transaction.unauthorized");
         }
 
         if (fromAccount.getUser().getId().equals(toAccount.getUser().getId())) {
             log.warn("Cannot transaction with same account");
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "error.transaction.sameAccount");
+            throw new SameAccountTransactionException("error.transaction.sameAccount");
         }
 
         // Validate PIN before any financial operation
         if (!passwordEncoder.matches(request.getPin(), fromAccount.getPin())) {
             log.warn("Invalid PIN for account: {}", fromAccount.getAccountNumber());
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "error.transaction.pin.invalid");
+            throw new InvalidPinException("error.transaction.pin.invalid");
         }
 
         // Check balance
         if (fromAccount.getBalance().compareTo(request.getAmount()) < 0) {
             log.warn("Insufficient balance for account: {}", fromAccount.getAccountNumber());
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "error.transaction.balance.insufficient");
+            throw new InsufficientBalanceException("error.transaction.balance.insufficient");
         }
 
         // Perform transaction

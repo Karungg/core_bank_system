@@ -10,7 +10,11 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.server.ResponseStatusException;
+import com.miftah.core_bank_system.exception.InsufficientBalanceException;
+import com.miftah.core_bank_system.exception.InvalidPinException;
+import com.miftah.core_bank_system.exception.ResourceNotFoundException;
+import com.miftah.core_bank_system.exception.SameAccountTransactionException;
+import com.miftah.core_bank_system.exception.UnauthorizedTransactionException;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -113,7 +117,7 @@ class TransactionServiceTest {
         lenient().when(accountRepository.findByIdForUpdate(fromAccount.getId())).thenReturn(Optional.empty());
         lenient().when(accountRepository.findByIdForUpdate(toAccount.getId())).thenReturn(Optional.of(toAccount));
 
-        assertThrows(ResponseStatusException.class, () -> transactionService.createTransaction(user, request));
+        assertThrows(ResourceNotFoundException.class, () -> transactionService.createTransaction(user, request));
 
         verify(accountRepository, never()).save(any());
         verify(transactionRepository, never()).save(any());
@@ -124,7 +128,7 @@ class TransactionServiceTest {
         lenient().when(accountRepository.findByIdForUpdate(fromAccount.getId())).thenReturn(Optional.of(fromAccount));
         lenient().when(accountRepository.findByIdForUpdate(toAccount.getId())).thenReturn(Optional.empty());
 
-        assertThrows(ResponseStatusException.class, () -> transactionService.createTransaction(user, request));
+        assertThrows(ResourceNotFoundException.class, () -> transactionService.createTransaction(user, request));
 
         verify(accountRepository, never()).save(any());
         verify(transactionRepository, never()).save(any());
@@ -137,7 +141,20 @@ class TransactionServiceTest {
         when(accountRepository.findByIdForUpdate(fromAccount.getId())).thenReturn(Optional.of(fromAccount));
         when(accountRepository.findByIdForUpdate(toAccount.getId())).thenReturn(Optional.of(toAccount));
 
-        assertThrows(ResponseStatusException.class, () -> transactionService.createTransaction(user, request));
+        assertThrows(UnauthorizedTransactionException.class, () -> transactionService.createTransaction(user, request));
+
+        verify(accountRepository, never()).save(any());
+        verify(transactionRepository, never()).save(any());
+    }
+
+    @Test
+    void createTransaction_SameAccount() {
+        // toAccount is set the same as fromAccount
+        request.setToAccountId(fromAccount.getId());
+        
+        when(accountRepository.findByIdForUpdate(fromAccount.getId())).thenReturn(Optional.of(fromAccount));
+
+        assertThrows(SameAccountTransactionException.class, () -> transactionService.createTransaction(user, request));
 
         verify(accountRepository, never()).save(any());
         verify(transactionRepository, never()).save(any());
@@ -150,7 +167,7 @@ class TransactionServiceTest {
         when(accountRepository.findByIdForUpdate(toAccount.getId())).thenReturn(Optional.of(toAccount));
         when(passwordEncoder.matches(request.getPin(), fromAccount.getPin())).thenReturn(true);
 
-        assertThrows(ResponseStatusException.class, () -> transactionService.createTransaction(user, request));
+        assertThrows(InsufficientBalanceException.class, () -> transactionService.createTransaction(user, request));
 
         verify(accountRepository, never()).save(any());
         verify(transactionRepository, never()).save(any());
@@ -162,7 +179,7 @@ class TransactionServiceTest {
         when(accountRepository.findByIdForUpdate(toAccount.getId())).thenReturn(Optional.of(toAccount));
         when(passwordEncoder.matches(request.getPin(), fromAccount.getPin())).thenReturn(false);
 
-        assertThrows(ResponseStatusException.class, () -> transactionService.createTransaction(user, request));
+        assertThrows(InvalidPinException.class, () -> transactionService.createTransaction(user, request));
 
         verify(accountRepository, never()).save(any());
         verify(transactionRepository, never()).save(any());
