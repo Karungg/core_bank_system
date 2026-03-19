@@ -57,4 +57,14 @@ public class AuthController {
                         messageSource.getMessage("success.me", null, LocaleContextHolder.getLocale()),
                         authService.me(user)));
     }
+
+    @PostMapping(path = "/refresh", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<WebResponse<TokenResponse>> refreshToken(@RequestBody @Valid TokenRefreshRequest request) {
+
+        return ResponseEntity.status(HttpStatus.OK).body(
+                WebResponse.success(
+                        HttpStatus.OK.value(),
+                        "Token refreshed successfully",
+                        authService.refreshToken(request)));
+    }
 }

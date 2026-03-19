@@ -144,7 +144,8 @@ class AuthControllerTest {
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.code").value(200))
                                 .andExpect(jsonPath("$.message").value(message))
-                                .andExpect(jsonPath("$.data.token").exists());
+                                .andExpect(jsonPath("$.data.token").exists())
+                                .andExpect(jsonPath("$.data.refreshToken").exists());
         }
 
         @Test
@@ -228,5 +229,58 @@ class AuthControllerTest {
                 mockMvc.perform(get("/api/auth/me")
                                 .contentType(MediaType.APPLICATION_JSON))
                                 .andExpect(status().isForbidden());
+        }
+
+        @Test
+        void refreshToken_Success_ShouldReturnNewTokens() throws Exception {
+                String password = "password123";
+                RegisterRequest registerRequest = RegisterRequest.builder()
+                        .username("testrefresh")
+                        .password(password)
+                        .build();
+                authServiceRegister(registerRequest);
+
+                LoginRequest loginRequest = LoginRequest.builder()
+                        .username("testrefresh")
+                        .password(password)
+                        .build();
+
+                // Perform login to get refresh token
+                String jsonResponse = mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(loginRequest)))
+                        .andReturn().getResponse().getContentAsString();
+
+                // Extract refresh token from response
+                tools.jackson.databind.JsonNode rootResource = objectMapper.readTree(jsonResponse);
+                String refreshToken = rootResource.get("data").get("refreshToken").asText();
+
+                TokenRefreshRequest refreshRequest = TokenRefreshRequest.builder()
+                        .refreshToken(refreshToken)
+                        .build();
+
+                mockMvc.perform(post("/api/auth/refresh")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(refreshRequest)))
+                        .andExpect(status().isOk())
+                        .andExpect(jsonPath("$.code").value(200))
+                        .andExpect(jsonPath("$.message").value("Token refreshed successfully"))
+                        .andExpect(jsonPath("$.data.token").exists())
+                        .andExpect(jsonPath("$.data.refreshToken").exists())
+                        .andExpect(jsonPath("$.data.refreshToken").value(not(refreshToken))); // Ensure it rotated
+        }
+
+        @Test
+        void refreshToken_InvalidToken_ShouldReturnForbidden() throws Exception {
+                TokenRefreshRequest refreshRequest = TokenRefreshRequest.builder()
+                        .refreshToken("invalid-token")
+                        .build();
+
+                mockMvc.perform(post("/api/auth/refresh")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(refreshRequest)))
+                        .andExpect(status().isForbidden())
+                        .andExpect(jsonPath("$.code").value(403))
+                        .andExpect(jsonPath("$.message").exists());
         }
 }

@@ -126,4 +126,11 @@ public class GlobalExceptionHandler {
                 WebResponse.error(HttpStatus.BAD_REQUEST.value(), "Bad Request", message)
         );
     }
+
+    @ExceptionHandler(TokenRefreshException.class)
+    public ResponseEntity<WebResponse<String>> tokenRefreshException(TokenRefreshException exception) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(
+                WebResponse.error(HttpStatus.FORBIDDEN.value(), "Forbidden", exception.getMessage())
+        );
+    }
 }

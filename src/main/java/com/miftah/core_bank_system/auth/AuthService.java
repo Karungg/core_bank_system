@@ -9,9 +9,11 @@ import com.miftah.core_bank_system.user.UserResponse;
 import com.miftah.core_bank_system.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import com.miftah.core_bank_system.exception.TokenRefreshException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -26,6 +28,8 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
 
     private final JwtService jwtService;
+
+    private final RefreshTokenService refreshTokenService;
 
     private final AuthenticationManager authenticationManager;
 
@@ -67,12 +71,43 @@ public class AuthService {
 
         UserDetails userDetails = userDetailsService.loadUserByUsername(request.getUsername());
         String jwtToken = jwtService.generateToken(userDetails);
+        
+        User user = userRepository.findByUsername(request.getUsername())
+                .orElseThrow(() -> new ResourceNotFoundException("User", "username", request.getUsername()));
+        RefreshToken refreshToken = refreshTokenService.createRefreshToken(user.getId());
 
         log.info("User logged in successfully: {}", request.getUsername());
 
         return TokenResponse.builder()
                 .token(jwtToken)
+                .refreshToken(refreshToken.getToken())
                 .build();
+    }
+
+    @Transactional
+    public TokenResponse refreshToken(TokenRefreshRequest request) {
+        log.info("Processing refresh token request");
+        String requestRefreshToken = request.getRefreshToken();
+
+        return refreshTokenService.findByToken(requestRefreshToken)
+                .map(refreshTokenService::verifyExpiration)
+                .map(refreshToken -> {
+                    User user = refreshToken.getUser();
+                    
+                    // Token rotation: delete the old one and generate a new one
+                    refreshTokenService.deleteToken(refreshToken);
+                    RefreshToken newRefreshToken = refreshTokenService.createRefreshToken(user.getId());
+                    
+                    // Generate new JWT
+                    String newJwt = jwtService.generateToken(user);
+                    
+                    log.info("Refresh token rotated successfully for user: {}", user.getUsername());
+                    return TokenResponse.builder()
+                        .token(newJwt)
+                        .refreshToken(newRefreshToken.getToken())
+                        .build();
+                })
+                .orElseThrow(() -> new TokenRefreshException(requestRefreshToken, "Refresh token is not in database!"));
     }
 
     public UserResponse me(User currentUser) {

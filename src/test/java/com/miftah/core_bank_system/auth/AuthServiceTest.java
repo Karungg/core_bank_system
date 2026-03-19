@@ -7,6 +7,7 @@ import com.miftah.core_bank_system.user.User;
 import com.miftah.core_bank_system.user.UserRepository;
 import com.miftah.core_bank_system.user.UserResponse;
 import com.miftah.core_bank_system.exception.ResourceNotFoundException;
+import com.miftah.core_bank_system.exception.TokenRefreshException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -41,6 +42,8 @@ class AuthServiceTest {
     private AuthenticationManager authenticationManager;
     @Mock
     private UserDetailsService userDetailsService;
+    @Mock
+    private RefreshTokenService refreshTokenService;
 
     @InjectMocks
     private AuthService authService;
@@ -91,11 +94,14 @@ class AuthServiceTest {
 
         when(userDetailsService.loadUserByUsername(loginRequest.getUsername())).thenReturn(userDetails);
         when(jwtService.generateToken(userDetails)).thenReturn("mock-token");
+        when(userRepository.findByUsername(loginRequest.getUsername())).thenReturn(java.util.Optional.of(user));
+        when(refreshTokenService.createRefreshToken(user.getId())).thenReturn(RefreshToken.builder().token("mock-refresh").build());
 
         TokenResponse response = authService.login(loginRequest);
 
         assertNotNull(response);
         assertEquals("mock-token", response.getToken());
+        assertEquals("mock-refresh", response.getRefreshToken());
         verify(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
     }
 
@@ -116,5 +122,43 @@ class AuthServiceTest {
 
         ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () -> authService.me(user));
         assertEquals("id", exception.getFieldName());
+    }
+
+    @Test
+    void refreshToken_Success() {
+        TokenRefreshRequest refreshRequest = new TokenRefreshRequest("valid-refresh-token");
+        RefreshToken mockRefreshToken = RefreshToken.builder()
+                .user(user)
+                .token("valid-refresh-token")
+                .expiryDate(Instant.now().plusMillis(10000))
+                .build();
+        RefreshToken newRefreshToken = RefreshToken.builder()
+                .user(user)
+                .token("new-refresh-token")
+                .expiryDate(Instant.now().plusMillis(10000))
+                .build();
+
+        when(refreshTokenService.findByToken("valid-refresh-token")).thenReturn(java.util.Optional.of(mockRefreshToken));
+        when(refreshTokenService.verifyExpiration(mockRefreshToken)).thenReturn(mockRefreshToken);
+        when(refreshTokenService.createRefreshToken(user.getId())).thenReturn(newRefreshToken);
+        when(jwtService.generateToken(user)).thenReturn("new-jwt-token");
+
+        TokenResponse response = authService.refreshToken(refreshRequest);
+
+        assertNotNull(response);
+        assertEquals("new-jwt-token", response.getToken());
+        assertEquals("new-refresh-token", response.getRefreshToken());
+        
+        verify(refreshTokenService).deleteToken(mockRefreshToken);
+        verify(refreshTokenService).createRefreshToken(user.getId());
+    }
+
+    @Test
+    void refreshToken_TokenNotFound_ThrowsException() {
+        TokenRefreshRequest refreshRequest = new TokenRefreshRequest("invalid-refresh-token");
+        when(refreshTokenService.findByToken("invalid-refresh-token")).thenReturn(java.util.Optional.empty());
+
+        TokenRefreshException exception = assertThrows(TokenRefreshException.class, () -> authService.refreshToken(refreshRequest));
+        assertEquals("invalid-refresh-token", exception.getToken());
     }
 }
