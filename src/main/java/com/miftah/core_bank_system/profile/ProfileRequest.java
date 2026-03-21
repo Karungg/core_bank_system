@@ -3,6 +3,7 @@ package com.miftah.core_bank_system.profile;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Past;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -25,6 +26,7 @@ public class ProfileRequest {
 
     @NotBlank(message = "{validation.profile.identityNumber.required}")
     @Size(min = 16, max = 16, message = "{validation.profile.identityNumber.size}")
+    @Pattern(regexp = "^\\d{16}$", message = "{validation.profile.identityNumber.pattern}")
     private String identityNumber;
 
     @NotBlank(message = "{validation.profile.name.required}")
@@ -48,6 +50,7 @@ public class ProfileRequest {
 
     @NotBlank(message = "{validation.profile.phone.required}")
     @Size(max = 20, message = "{validation.profile.phone.size}")
+    @Pattern(regexp = "^\\+?[0-9]{10,15}$", message = "{validation.profile.phone.pattern}")
     private String phone;
 
     @NotBlank(message = "{validation.profile.nationality.required}")
