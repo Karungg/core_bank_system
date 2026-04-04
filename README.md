@@ -1,113 +1,192 @@
-# Core Bank System API
+<h1 align="center">Core Bank System API</h1>
 
-Core Bank System is a robust backend RESTful API built with Spring Boot. It provides fundamental banking operations including user management, account handling, transactions, and secure authentication using JWT.
+<p align="center">
+  <strong>A high-performance, secure, and robust banking backend built with Java 25 and Spring Boot 4.0.1.</strong>
+</p>
 
-## Features
+<p align="center">
+  <img src="https://img.shields.io/badge/Java-25-orange?style=for-the-badge&logo=openjdk" alt="Java 25">
+  <img src="https://img.shields.io/badge/Spring_Boot-4.0.1-brightgreen?style=for-the-badge&logo=spring" alt="Spring Boot 4.0.1">
+  <img src="https://img.shields.io/badge/PostgreSQL-latest-blue?style=for-the-badge&logo=postgresql" alt="PostgreSQL">
+  <img src="https://img.shields.io/badge/Docker-enabled-blue?style=for-the-badge&logo=docker" alt="Docker">
+  <img src="https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge" alt="License">
+</p>
 
-- **Authentication & Authorization**: Secure JWT-based login and registration.
-- **Account Management**: Create and manage banking accounts (with PIN, Card Number, CVV, Balance).
-- **User & Profile Management**: Register and manage bank users and their profiles.
-- **Transactions**: Secure money transfers, deposits, and withdrawals.
-- **Audit Logging**: Automated tracking of creation and modification dates using JPA Auditing.
-- **Database Migration**: Automated database schema migrations using Flyway.
-- **API Documentation**: Interactive SpringDoc OpenAPI/Swagger UI integration.
+---
 
-## Tech Stack
+## Overview
 
-- **Language**: Java 25
-- **Framework**: Spring Boot 4.0.1 (Web, Data JPA, Security, Validation)
-- **Database**: PostgreSQL
-- **Migration Tool**: Flyway
-- **Security**: Spring Security & JSON Web Tokens (JJWT)
-- **Testing**: JUnit 5, Mockito, Testcontainers
-- **Containerization**: Docker & Docker Compose
-- **Build Tool**: Maven
+**Core Bank System** is a mission-critical RESTful API designed to handle modern banking operations with precision and security. From multi-role user management to atomic transaction processing, this system provides a solid foundation for financial service applications.
 
-## Prerequisites
+### Key Features
 
-Before you begin, ensure you have met the following requirements:
+| Feature | Description |
+| :--- | :--- |
+| **Secure Auth** | JWT-based authentication with role-based access control (Admin/User). |
+| **Account Mgmt** | Dynamic account generation with unique Account Numbers, PINs, and CVVs. |
+| **Transactions** | Atomic transfers, deposits, and withdrawals with balance integrity. |
+| **Profile Engine** | Comprehensive user profiles (KYC ready) with full identification tracking. |
+| **Audit Trail** | Automated `createdAt` and `updatedAt` tracking using JPA Auditing. |
+| **DB Evolution** | Version-controlled schema migrations using Flyway. |
 
-- Java Development Kit (JDK) 25 installed.
-- Maven installed (or use the provided mvnw wrapper).
-- Docker Desktop installed and running (Required for local DB and Testcontainers).
+---
+
+## System Architecture
+
+The project follows a **Package-by-Feature** architecture, promoting high cohesion and modularity.
+
+### Core Components
+
+```mermaid
+graph TD
+    Client((Client)) <--> Controller[API Controllers]
+    Controller --> Service[Business Services]
+    Service --> Repository[Data Repositories]
+    Repository <--> DB[(PostgreSQL)]
+    
+    subgraph "Core Modules"
+        Auth[Auth/Security]
+        Account[Account Mgmt]
+        Transaction[Transaction Engine]
+        Profile[Profile/KYC]
+    end
+    
+    Service -.-> Auth
+    Service -.-> Account
+    Service -.-> Transaction
+    Service -.-> Profile
+```
+
+### Database Schema (ERD)
+
+```mermaid
+erDiagram
+    USERS ||--|| PROFILES : "has kyc"
+    USERS ||--o{ ACCOUNTS : "owns"
+    ACCOUNTS ||--o{ TRANSACTIONS : "source/target"
+    
+    USERS {
+        UUID id PK
+        string username
+        string password
+        string role
+        timestamp created_at
+    }
+    
+    PROFILES {
+        UUID id PK
+        string identity_number
+        string name
+        string phone
+        string address
+    }
+    
+    ACCOUNTS {
+        UUID id PK
+        string account_number
+        decimal balance
+        string pin
+        string card_number
+        string type
+    }
+    
+    TRANSACTIONS {
+        UUID id PK
+        decimal amount
+        UUID from_account_id FK
+        UUID to_account_id FK
+        timestamp created_at
+    }
+```
+
+---
 
 ## Getting Started
 
-Follow these steps to get the project running on your local machine.
+### Prerequisites
 
-### 1. Clone the repository
+- **JDK 25** or higher
+- **Docker & Docker Compose**
+- **Maven** (or use `./mvnw`)
 
-```bash
-git clone https://github.com/Karungg/core_bank_system.git
-cd core_bank_system
+### Setup & Installation
+
+1. **Clone & Environment**:
+   ```bash
+   git clone https://github.com/Karungg/core_bank_system.git
+   cd core_bank_system
+   cp .env.example .env # Configure your DB credentials
+   ```
+
+2. **Infrastructure**:
+   ```bash
+   docker compose up -d
+   ```
+
+3. **Run Application**:
+   ```bash
+   ./mvnw spring-boot:run
+   ```
+
+---
+
+## Development Workflow
+
+Professional tools integrated for quality and performance:
+
+- **Testing**: Run comprehensive unit and integration tests (using Testcontainers).
+  ```bash
+  ./mvnw clean test
+  ```
+- **Performance**: Execute K6 load tests located in `k6/`.
+  ```bash
+  k6 run k6/script.js
+  ```
+- **Postman**: Import `postman/generic_collection.json` for manual exploration.
+
+---
+
+## API Reference & Samples
+
+### Transaction Flow (Sequence)
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant API as TransactionController
+    participant S as TransactionService
+    participant DB as Database
+
+    C->>API: POST /api/transactions/transfer
+    API->>S: executeTransfer(dto)
+    S->>DB: Lock sender & receiver accounts
+    S->>S: Validate PIN & Balance
+    S->>DB: Update Balances (Atomic)
+    S->>DB: Save Transaction Log
+    S-->>API: Transfer Success
+    API-->>C: 201 Created (TransactionResponse)
 ```
 
-### 2. Configure Environment Variables
-
-Create a `.env` file in the root directory based on the requirements of `compose.yaml`. You will need to set:
-
-```env
-POSTGRES_USER=root
-POSTGRES_PASSWORD=password
-POSTGRES_DB=core_bank_system
+### Sample Response: Account Details
+`GET /api/accounts/{id}`
+```json
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "accountNumber": "1234567890",
+  "balance": 2500000.50,
+  "cardNumber": "4532XXXXXXXX1234",
+  "type": "SAVINGS",
+  "createdAt": "2024-04-04"
+}
 ```
 
-### 3. Start the Database
+---
 
-The project includes a `compose.yaml` file to quickly spin up a PostgreSQL instance and Adminer on port 8081.
+## License
 
-Start it manually:
+Distributed under the MIT License. See `LICENSE` for more information.
 
-```bash
-docker-compose up -d
-```
+<p align="center">
+  Made by <strong>Miftah</strong>
+</p>
 
-### 4. Run the Application
-
-Run the application using Maven. Flyway will automatically run the database migrations upon startup.
-
-```bash
-./mvnw spring-boot:run
-```
-
-The server will start on http://localhost:8080.
-
-## API Documentation
-
-Once the application is running, you can access the interactive API documentation generated by OpenAPI/Swagger at:
-
-- **Swagger UI**: http://localhost:8080/swagger-ui/index.html
-- **OpenAPI JSON**: http://localhost:8080/v3/api-docs
-
-To test secure endpoints, authenticate via the `/api/auth/login` endpoint, copy the token, and click the "Authorize" button in Swagger UI to inject the Bearer token.
-
-## Testing & Postman Collection
-
-The project uses Testcontainers for integration testing, which spins up a real PostgreSQL container just for tests. Ensure Docker is running before executing tests.
-
-Run all unit and integration tests:
-
-```bash
-./mvnw clean test
-```
-
-A comprehensive Postman collection is also available in the `postman/` directory (`generic_collection.json`) for manual API testing.
-
-## Project Structure
-
-This project follows a Package by Feature architecture to ensure high cohesion and maintainability:
-
-```text
-src/main/java/com/miftah/core_bank_system
-├── auth/            # Authentication logic & JWT filters
-├── user/            # User entity, repository, and services
-├── profile/         # User profile management
-├── account/         # Bank account management
-├── transaction/     # Transfer, deposit, and withdrawal logic
-├── exception/       # Global exception handler & custom exceptions
-└── config/          # Spring Security, Swagger, and App configurations
-```
-
-## 📄 License
-
-Distributed under the MIT License. See LICENSE for more information.
