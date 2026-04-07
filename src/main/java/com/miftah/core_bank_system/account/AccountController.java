@@ -77,6 +77,16 @@ public class AccountController {
         );
     }
 
+    @PatchMapping(path = "/{id}/status", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<WebResponse<AccountResponse>> updateStatus(@PathVariable("id") UUID id, @RequestBody @Valid UpdateAccountStatusRequest request) {
+        AccountResponse response = accountService.updateStatus(id, request);
+        String message = messageSource.getMessage("success.update", null, LocaleContextHolder.getLocale());
+
+        return ResponseEntity.status(HttpStatus.OK).body(
+                WebResponse.success(HttpStatus.OK.value(), message, response)
+        );
+    }
+
     @DeleteMapping(path = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<WebResponse<String>> delete(@PathVariable("id") UUID id) {
         accountService.delete(id);
