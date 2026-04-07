@@ -70,6 +70,17 @@ public class Account {
     @Column(nullable = false)
     private AccountType type;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private AccountStatus status;
+
+    @Column(name = "failed_pin_attempts", nullable = false)
+    @Builder.Default
+    private Integer failedPinAttempts = 0;
+
+    @Column(name = "pin_locked_until")
+    private java.time.Instant pinLockedUntil;
+
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDate createdAt;

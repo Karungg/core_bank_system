@@ -27,6 +27,8 @@ public class AccountResponse {
 
     private AccountType type;
 
+    private AccountStatus status;
+
     private LocalDate createdAt;
 
     private LocalDate updatedAt;
