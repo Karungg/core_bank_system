@@ -4,6 +4,8 @@ import com.miftah.core_bank_system.config.EncryptionUtil;
 import com.miftah.core_bank_system.exception.ResourceNotFoundException;
 import com.miftah.core_bank_system.user.User;
 import com.miftah.core_bank_system.user.UserRepository;
+import com.miftah.core_bank_system.audit.AuditService;
+import com.miftah.core_bank_system.audit.AuditAction;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,6 +34,8 @@ public class AccountServiceImpl implements AccountService {
     private final AccountGeneratorUtil accountGeneratorUtil;
 
     private final EncryptionUtil encryptionUtil;
+
+    private final AuditService auditService;
 
     @Override
     public AccountResponse getById(UUID id) {
@@ -84,11 +88,13 @@ public class AccountServiceImpl implements AccountService {
                 .cardNumber(cardNumber)
                 .cvv(encryptionUtil.encrypt(cvv))
                 .type(request.getType())
+                .status(AccountStatus.ACTIVE)
                 .expiredDate(LocalDate.now().plusYears(5))
                 .build();
 
         account = accountRepository.save(account);
         log.info("Account created successfully with ID: {}", account.getId());
+        auditService.logAction(user, AuditAction.ACCOUNT_CREATED, "Account created with number: " + cardNumber);
 
         return toResponse(account);
     }
@@ -114,10 +120,58 @@ public class AccountServiceImpl implements AccountService {
     @Override
     @Transactional
     public void delete(UUID id) {
-        log.info("Deleting account ID: {}", id);
+        log.info("Soft deleting account ID: {}", id);
         Account account = findAccountByIdOrThrow(id);
-        accountRepository.delete(account);
-        log.info("Account deleted successfully: {}", id);
+        
+        if (account.getStatus() == AccountStatus.CLOSED) {
+            log.warn("Account {} is already closed", id);
+            return;
+        }
+        
+        account.setStatus(AccountStatus.CLOSED);
+        accountRepository.save(account);
+        log.info("Account soft deleted successfully: {}", id);
+        auditService.logAction(account.getUser(), AuditAction.ACCOUNT_DELETED, "Account soft deleted");
+    }
+
+    @Override
+    @Transactional
+    public AccountResponse updateStatus(UUID id, UpdateAccountStatusRequest request) {
+        log.info("Updating status for account ID: {} to {}", id, request.getStatus());
+        Account account = findAccountByIdOrThrow(id);
+
+        AccountStatus currentStatus = account.getStatus();
+        AccountStatus newStatus = request.getStatus();
+
+        if (currentStatus == AccountStatus.CLOSED) {
+            throw new com.miftah.core_bank_system.exception.InvalidStatusTransitionException("Cannot change status of a CLOSED account");
+        }
+
+        boolean validTransition = false;
+        switch (currentStatus) {
+            case ACTIVE:
+                if (newStatus == AccountStatus.FROZEN || newStatus == AccountStatus.SUSPENDED || newStatus == AccountStatus.CLOSED) {
+                    validTransition = true;
+                }
+                break;
+            case FROZEN:
+            case SUSPENDED:
+                if (newStatus == AccountStatus.ACTIVE || newStatus == AccountStatus.CLOSED) {
+                    validTransition = true;
+                }
+                break;
+            default:
+                break;
+        }
+
+        if (!validTransition && currentStatus != newStatus) {
+            throw new com.miftah.core_bank_system.exception.InvalidStatusTransitionException("Invalid transition from " + currentStatus + " to " + newStatus);
+        }
+
+        account.setStatus(newStatus);
+        account = accountRepository.save(account);
+        auditService.logAction(account.getUser(), AuditAction.ACCOUNT_STATUS_UPDATED, "Account status updated to: " + newStatus);
+        return toResponse(account);
     }
 
     // ========== Private Helpers ==========
@@ -145,6 +199,7 @@ public class AccountServiceImpl implements AccountService {
                 .balance(account.getBalance())
                 .cardNumber(account.getCardNumber())
                 .type(account.getType())
+                .status(account.getStatus())
                 .createdAt(account.getCreatedAt())
                 .updatedAt(account.getUpdatedAt())
                 .build();

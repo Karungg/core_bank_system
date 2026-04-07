@@ -16,5 +16,7 @@ public interface AccountService {
 
     AccountResponse update(UUID id, AccountRequest request);
 
+    AccountResponse updateStatus(UUID id, UpdateAccountStatusRequest request);
+
     void delete(UUID id);
 }
