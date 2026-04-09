@@ -7,6 +7,8 @@ import com.miftah.core_bank_system.user.User;
 import com.miftah.core_bank_system.user.UserRepository;
 import com.miftah.core_bank_system.user.UserResponse;
 import com.miftah.core_bank_system.exception.ResourceNotFoundException;
+import com.miftah.core_bank_system.audit.AuditAction;
+import com.miftah.core_bank_system.audit.AuditService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import com.miftah.core_bank_system.exception.TokenRefreshException;
@@ -34,6 +36,8 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
 
     private final UserDetailsService userDetailsService;
+
+    private final AuditService auditService;
 
     public UserResponse register(RegisterRequest request) {
         log.info("Registering user: {}", request.getUsername());
@@ -64,19 +68,39 @@ public class AuthService {
     public TokenResponse login(LoginRequest request) {
         log.info("Logging in user: {}", request.getUsername());
 
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        request.getUsername(),
-                        request.getPassword()));
+        User user = userRepository.findByUsername(request.getUsername())
+                .orElseThrow(() -> new ResourceNotFoundException("User", "username", request.getUsername()));
+
+        if (user.getLoginLockedUntil() != null && user.getLoginLockedUntil().isAfter(java.time.Instant.now())) {
+            throw new com.miftah.core_bank_system.exception.AccountLockedException("Account login is locked until: " + user.getLoginLockedUntil());
+        }
+
+        try {
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            request.getUsername(),
+                            request.getPassword()));
+        } catch (org.springframework.security.core.AuthenticationException e) {
+            user.setFailedLoginAttempts(user.getFailedLoginAttempts() + 1);
+            if (user.getFailedLoginAttempts() >= 5) {
+                user.setLoginLockedUntil(java.time.Instant.now().plus(15, java.time.temporal.ChronoUnit.MINUTES));
+                user.setFailedLoginAttempts(0);
+            }
+            userRepository.save(user);
+            throw e;
+        }
+
+        user.setFailedLoginAttempts(0);
+        user.setLoginLockedUntil(null);
+        userRepository.save(user);
 
         UserDetails userDetails = userDetailsService.loadUserByUsername(request.getUsername());
         String jwtToken = jwtService.generateToken(userDetails);
         
-        User user = userRepository.findByUsername(request.getUsername())
-                .orElseThrow(() -> new ResourceNotFoundException("User", "username", request.getUsername()));
         RefreshToken refreshToken = refreshTokenService.createRefreshToken(user.getId());
 
         log.info("User logged in successfully: {}", request.getUsername());
+        auditService.logAction(user, AuditAction.LOGIN, "User logged in successfully");
 
         return TokenResponse.builder()
                 .token(jwtToken)
@@ -116,7 +140,11 @@ public class AuthService {
         String requestRefreshToken = request.getRefreshToken();
         
         refreshTokenService.findByToken(requestRefreshToken)
-                .ifPresent(refreshTokenService::deleteToken);
+                .ifPresent(refreshToken -> {
+                    User user = refreshToken.getUser();
+                    refreshTokenService.deleteToken(refreshToken);
+                    auditService.logAction(user, AuditAction.LOGOUT, "User logged out successfully");
+                });
         
         log.info("Logout successful, refresh token deleted");
     }
