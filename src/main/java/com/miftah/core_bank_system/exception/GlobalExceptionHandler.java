@@ -155,4 +155,25 @@ public class GlobalExceptionHandler {
                 WebResponse.error(HttpStatus.FORBIDDEN.value(), "Forbidden", exception.getMessage())
         );
     }
+
+    @ExceptionHandler(AccountNotActiveException.class)
+    public ResponseEntity<WebResponse<String>> accountNotActiveException(AccountNotActiveException exception) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                WebResponse.error(HttpStatus.BAD_REQUEST.value(), "Bad Request", exception.getMessage())
+        );
+    }
+
+    @ExceptionHandler(InvalidStatusTransitionException.class)
+    public ResponseEntity<WebResponse<String>> invalidStatusTransitionException(InvalidStatusTransitionException exception) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                WebResponse.error(HttpStatus.BAD_REQUEST.value(), "Bad Request", exception.getMessage())
+        );
+    }
+
+    @ExceptionHandler(AccountLockedException.class)
+    public ResponseEntity<WebResponse<String>> accountLockedException(AccountLockedException exception) {
+        return ResponseEntity.status(HttpStatus.LOCKED).body(
+                WebResponse.error(HttpStatus.LOCKED.value(), "Locked", exception.getMessage())
+        );
+    }
 }
