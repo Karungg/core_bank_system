@@ -46,7 +46,9 @@ public class SecurityConfig {
 
                                                 .requestMatchers(USER_WHITELIST).hasRole("USER")
 
-                                                .requestMatchers("/api/accounts/**").hasRole("ADMIN")
+                                                .requestMatchers("/api/transactions/me", "/api/audits/me").hasRole("USER")
+
+                                                .requestMatchers("/api/accounts/**", "/api/audits/**").hasRole("ADMIN")
                                                 .requestMatchers("/api/transactions/**").hasAnyRole("ADMIN", "USER")
                                                 .anyRequest().authenticated())
                                 .sessionManagement(session -> session
