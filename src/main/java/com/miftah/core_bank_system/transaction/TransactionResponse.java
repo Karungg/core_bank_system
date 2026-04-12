@@ -20,6 +20,7 @@ public class TransactionResponse {
     private BigDecimal amount;
     private UUID fromAccountId;
     private UUID toAccountId;
+    private TransactionType type;
     private Instant createdAt;
     private Instant updatedAt;
 }
