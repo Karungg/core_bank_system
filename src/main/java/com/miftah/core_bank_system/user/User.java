@@ -61,6 +61,13 @@ public class User implements UserDetails {
     @Column(nullable = false)
     private Instant updatedAt;
 
+    @Column(name = "failed_login_attempts", nullable = false)
+    @Builder.Default
+    private Integer failedLoginAttempts = 0;
+
+    @Column(name = "login_locked_until")
+    private Instant loginLockedUntil;
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
@@ -73,7 +80,8 @@ public class User implements UserDetails {
 
     @Override
     public boolean isAccountNonLocked() {
-        return true;
+        if (loginLockedUntil == null) return true;
+        return loginLockedUntil.isBefore(Instant.now());
     }
 
     @Override
