@@ -121,6 +121,8 @@ public class AccountControllerTest {
                                 .cvv("123")
                                 .type(AccountType.SILVER)
                                 .expiredDate(LocalDate.now().plusYears(5))
+                                .status(AccountStatus.ACTIVE)
+                                .failedPinAttempts(0)
                                 .build();
         }
 
@@ -199,6 +201,7 @@ public class AccountControllerTest {
                         .andExpect(jsonPath("$.message").value(expectedMessage));
 
                 mockMvc.perform(get("/api/accounts/" + account.getId()))
-                        .andExpect(status().isNotFound());
+                        .andExpect(status().isOk())
+                        .andExpect(jsonPath("$.data.status").value("CLOSED"));
         }
 }

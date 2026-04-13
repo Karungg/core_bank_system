@@ -8,6 +8,7 @@ import com.miftah.core_bank_system.user.UserRepository;
 import com.miftah.core_bank_system.user.UserResponse;
 import com.miftah.core_bank_system.exception.ResourceNotFoundException;
 import com.miftah.core_bank_system.exception.TokenRefreshException;
+import com.miftah.core_bank_system.audit.AuditService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -44,6 +45,8 @@ class AuthServiceTest {
     private UserDetailsService userDetailsService;
     @Mock
     private RefreshTokenService refreshTokenService;
+    @Mock
+    private AuditService auditService;
 
     @InjectMocks
     private AuthService authService;

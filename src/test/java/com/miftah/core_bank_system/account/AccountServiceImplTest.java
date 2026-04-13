@@ -4,6 +4,7 @@ import com.miftah.core_bank_system.config.EncryptionUtil;
 import com.miftah.core_bank_system.exception.ResourceNotFoundException;
 import com.miftah.core_bank_system.user.User;
 import com.miftah.core_bank_system.user.UserRepository;
+import com.miftah.core_bank_system.audit.AuditService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -42,6 +43,9 @@ class AccountServiceImplTest {
 
     @Mock
     private EncryptionUtil encryptionUtil;
+
+    @Mock
+    private AuditService auditService;
 
     @InjectMocks
     private AccountServiceImpl accountService;
@@ -176,9 +180,11 @@ class AccountServiceImplTest {
     @Test
     void delete_Success() {
         when(accountRepository.findById(account.getId())).thenReturn(Optional.of(account));
+        when(accountRepository.save(any(Account.class))).thenReturn(account);
 
         accountService.delete(account.getId());
 
-        verify(accountRepository).delete(account);
+        verify(accountRepository).save(account);
+        assertEquals(AccountStatus.CLOSED, account.getStatus());
     }
 }
