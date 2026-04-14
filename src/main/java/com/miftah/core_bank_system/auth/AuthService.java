@@ -9,8 +9,10 @@ import com.miftah.core_bank_system.user.UserResponse;
 import com.miftah.core_bank_system.exception.ResourceNotFoundException;
 import com.miftah.core_bank_system.audit.AuditAction;
 import com.miftah.core_bank_system.audit.AuditService;
+import com.miftah.core_bank_system.notification.event.LoginEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import com.miftah.core_bank_system.exception.TokenRefreshException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -38,6 +40,8 @@ public class AuthService {
     private final UserDetailsService userDetailsService;
 
     private final AuditService auditService;
+
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     public UserResponse register(RegisterRequest request) {
         log.info("Registering user: {}", request.getUsername());
@@ -87,6 +91,7 @@ public class AuthService {
                 user.setFailedLoginAttempts(0);
             }
             userRepository.save(user);
+            applicationEventPublisher.publishEvent(new LoginEvent(user.getId(), user.getUsername(), "unknown", false));
             throw e;
         }
 
@@ -101,6 +106,8 @@ public class AuthService {
 
         log.info("User logged in successfully: {}", request.getUsername());
         auditService.logAction(user, AuditAction.LOGIN, "User logged in successfully");
+
+        applicationEventPublisher.publishEvent(new LoginEvent(user.getId(), user.getUsername(), "unknown", true));
 
         return TokenResponse.builder()
                 .token(jwtToken)
