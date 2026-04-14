@@ -12,13 +12,16 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
+import com.miftah.core_bank_system.user.User;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 
+import java.time.LocalDate;
+import java.util.UUID;
+
 @RestController
-@RequestMapping("/api/accounts")
+@RequestMapping("/api/v1/accounts")
 @RequiredArgsConstructor
 public class AccountController {
 
@@ -46,14 +49,87 @@ public class AccountController {
         );
     }
 
+    @GetMapping(path = "/{id}/mutations", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<WebResponse<Page<MutationResponse>>> getMutationsAdmin(
+            @PathVariable("id") UUID id,
+            @RequestParam(required = false) LocalDate startDate,
+            @RequestParam(required = false) LocalDate endDate,
+            @RequestParam(required = false) MutationType mutationType,
+            @PageableDefault(size = 20, sort = "createdAt", direction = org.springframework.data.domain.Sort.Direction.DESC) Pageable pageable) {
+        
+        Page<MutationResponse> responses = accountService.getMutations(id, null, startDate, endDate, mutationType, pageable);
+        String message = messageSource.getMessage("success.get", null, LocaleContextHolder.getLocale());
+        
+        return ResponseEntity.status(HttpStatus.OK).body(
+                WebResponse.success(HttpStatus.OK.value(), message, responses)
+        );
+    }
+
     @GetMapping(path = "/me", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<WebResponse<AccountResponse>> getMe(@AuthenticationPrincipal UserDetails userDetails) {
-        AccountResponse response = accountService.getByUsername(userDetails.getUsername());
+    public ResponseEntity<WebResponse<java.util.List<AccountResponse>>> getMyAccounts(@AuthenticationPrincipal User user) {
+        java.util.List<AccountResponse> response = accountService.getByUserId(user.getId());
 
         String message = messageSource.getMessage("success.get", null, LocaleContextHolder.getLocale());
         
         return ResponseEntity.status(HttpStatus.OK).body(
             WebResponse.success(HttpStatus.OK.value(), message, response)
+        );
+    }
+
+    @GetMapping(path = "/me/{accountId}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<WebResponse<AccountResponse>> getMyAccountById(
+            @AuthenticationPrincipal User user,
+            @PathVariable("accountId") UUID accountId) {
+        AccountResponse response = accountService.getByIdAndUserId(accountId, user.getId());
+
+        String message = messageSource.getMessage("success.get", null, LocaleContextHolder.getLocale());
+        
+        return ResponseEntity.status(HttpStatus.OK).body(
+            WebResponse.success(HttpStatus.OK.value(), message, response)
+        );
+    }
+
+    @GetMapping(path = "/me/{accountId}/balance", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<WebResponse<BalanceResponse>> getMyBalance(
+            @AuthenticationPrincipal User user,
+            @PathVariable("accountId") UUID accountId) {
+        BalanceResponse response = accountService.getBalance(accountId, user.getId());
+
+        String message = messageSource.getMessage("success.get", null, LocaleContextHolder.getLocale());
+        
+        return ResponseEntity.status(HttpStatus.OK).body(
+            WebResponse.success(HttpStatus.OK.value(), message, response)
+        );
+    }
+
+    @GetMapping(path = "/me/{accountId}/mutations", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<WebResponse<Page<MutationResponse>>> getMyMutations(
+            @AuthenticationPrincipal User user,
+            @PathVariable("accountId") UUID accountId,
+            @RequestParam(required = false) LocalDate startDate,
+            @RequestParam(required = false) LocalDate endDate,
+            @RequestParam(required = false) MutationType mutationType,
+            @PageableDefault(size = 20, sort = "createdAt", direction = org.springframework.data.domain.Sort.Direction.DESC) Pageable pageable) {
+        
+        Page<MutationResponse> responses = accountService.getMutations(accountId, user.getId(), startDate, endDate, mutationType, pageable);
+        String message = messageSource.getMessage("success.get", null, LocaleContextHolder.getLocale());
+        
+        return ResponseEntity.status(HttpStatus.OK).body(
+            WebResponse.success(HttpStatus.OK.value(), message, responses)
+        );
+    }
+
+    @PutMapping(path = "/me/{accountId}/pin", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<WebResponse<String>> changePin(
+            @AuthenticationPrincipal User user,
+            @PathVariable("accountId") UUID accountId,
+            @RequestBody @Valid ChangePinRequest request) {
+
+        accountService.changePin(user, accountId, request);
+        String message = messageSource.getMessage("success.update", null, LocaleContextHolder.getLocale());
+
+        return ResponseEntity.status(HttpStatus.OK).body(
+            WebResponse.success(HttpStatus.OK.value(), message, "OK")
         );
     }
 
