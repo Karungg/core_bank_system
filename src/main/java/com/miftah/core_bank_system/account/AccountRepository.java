@@ -8,7 +8,9 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
+import java.util.List;
 import java.util.UUID;
+
 
 @Repository
 public interface AccountRepository extends JpaRepository<Account, UUID> {
@@ -17,7 +19,11 @@ public interface AccountRepository extends JpaRepository<Account, UUID> {
     @Query("SELECT a FROM Account a WHERE a.id = :id")
     Optional<Account> findByIdForUpdate(@Param("id") UUID id);
 
-    Optional<Account> findByUserId(UUID userId);
+    List<Account> findByUserId(UUID userId);
+
+    List<Account> findByUserIdAndStatus(UUID userId, AccountStatus status);
+
+    Optional<Account> findByIdAndUserId(UUID id, UUID userId);
 
     boolean existsByAccountNumber(String accountNumber);
 

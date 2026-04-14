@@ -81,6 +81,9 @@ public class Account {
     @Column(name = "pin_locked_until")
     private java.time.Instant pinLockedUntil;
 
+    @Column(name = "pin_changed_at")
+    private java.time.Instant pinChangedAt;
+
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDate createdAt;
