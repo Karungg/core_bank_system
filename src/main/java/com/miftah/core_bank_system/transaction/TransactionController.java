@@ -26,7 +26,7 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/transactions")
+@RequestMapping("/api/v1/transactions")
 @RequiredArgsConstructor
 public class TransactionController {
 

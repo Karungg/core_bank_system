@@ -11,8 +11,10 @@ import com.miftah.core_bank_system.exception.SameAccountTransactionException;
 import com.miftah.core_bank_system.exception.UnauthorizedTransactionException;
 import com.miftah.core_bank_system.audit.AuditService;
 import com.miftah.core_bank_system.audit.AuditAction;
+import com.miftah.core_bank_system.notification.event.TransactionCompletedEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -38,6 +40,7 @@ public class TransactionServiceImpl implements TransactionService {
     private final AccountRepository accountRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuditService auditService;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     @Override
     @Transactional
@@ -74,7 +77,7 @@ public class TransactionServiceImpl implements TransactionService {
             throw new UnauthorizedTransactionException("error.transaction.unauthorized");
         }
 
-        if (fromAccount.getUser().getId().equals(toAccount.getUser().getId())) {
+        if (fromAccount.getId().equals(toAccount.getId())) {
             log.warn("Cannot transaction with same account");
             throw new SameAccountTransactionException("error.transaction.sameAccount");
         }
@@ -119,6 +122,17 @@ public class TransactionServiceImpl implements TransactionService {
 
         log.info("Transfer created successfully with ID: {}", transaction.getId());
         auditService.logAction(user, AuditAction.TRANSACTION_TRANSFER, "Transfer " + request.getAmount() + " to " + toAccount.getAccountNumber());
+
+        applicationEventPublisher.publishEvent(new TransactionCompletedEvent(
+                user.getId(), user.getUsername(), transaction.getId(), TransactionType.TRANSFER, 
+                transaction.getAmount(), fromAccount.getAccountNumber(), toAccount.getAccountNumber()
+        ));
+
+        applicationEventPublisher.publishEvent(new TransactionCompletedEvent(
+                toAccount.getUser().getId(), toAccount.getUser().getUsername(), transaction.getId(), TransactionType.TRANSFER, 
+                transaction.getAmount(), fromAccount.getAccountNumber(), toAccount.getAccountNumber()
+        ));
+
         return toTransactionResponse(transaction);
     }
 
@@ -148,6 +162,12 @@ public class TransactionServiceImpl implements TransactionService {
 
         log.info("Deposit created successfully with ID: {}", transaction.getId());
         auditService.logAction(admin, AuditAction.TRANSACTION_DEPOSIT, "Deposit " + request.getAmount() + " to " + toAccount.getAccountNumber());
+
+        applicationEventPublisher.publishEvent(new TransactionCompletedEvent(
+                toAccount.getUser().getId(), toAccount.getUser().getUsername(), transaction.getId(), TransactionType.DEPOSIT, 
+                transaction.getAmount(), null, toAccount.getAccountNumber()
+        ));
+
         return toTransactionResponse(transaction);
     }
 
@@ -205,6 +225,12 @@ public class TransactionServiceImpl implements TransactionService {
 
         log.info("Withdrawal created successfully with ID: {}", transaction.getId());
         auditService.logAction(user, AuditAction.TRANSACTION_WITHDRAWAL, "Withdrawal " + request.getAmount() + " from " + fromAccount.getAccountNumber());
+        
+        applicationEventPublisher.publishEvent(new TransactionCompletedEvent(
+                user.getId(), user.getUsername(), transaction.getId(), TransactionType.WITHDRAWAL, 
+                transaction.getAmount(), fromAccount.getAccountNumber(), null
+        ));
+
         return toTransactionResponse(transaction);
     }
 
