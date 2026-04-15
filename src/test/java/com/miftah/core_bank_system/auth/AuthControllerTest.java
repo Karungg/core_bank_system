@@ -1,12 +1,7 @@
 package com.miftah.core_bank_system.auth;
 
 import com.miftah.core_bank_system.TestcontainersConfiguration;
-import com.miftah.core_bank_system.account.AccountRepository;
-import com.miftah.core_bank_system.profile.ProfileRepository;
 import com.miftah.core_bank_system.user.UserRepository;
-
-import tools.jackson.databind.ObjectMapper;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,9 +10,13 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
-import java.util.Locale;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+
+import java.util.Locale;
 
 import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -36,10 +35,7 @@ class AuthControllerTest {
         private UserRepository userRepository;
 
         @Autowired
-        private AccountRepository accountRepository;
-
-        @Autowired
-        private ProfileRepository profileRepository;
+        private AuthService authService;
 
         @Autowired
         private ObjectMapper objectMapper;
@@ -47,16 +43,58 @@ class AuthControllerTest {
         @Autowired
         private MessageSource messageSource;
 
+        @Autowired
+        private JdbcTemplate jdbcTemplate;
+
         private String getMessage(String code) {
                 return messageSource.getMessage(code, null, Locale.getDefault());
         }
 
         @BeforeEach
         void setUp() {
-                accountRepository.deleteAll();
-                profileRepository.deleteAll();
-                userRepository.deleteAll();
+                jdbcTemplate.execute("TRUNCATE TABLE notifications, audit_logs, transactions, accounts, refresh_tokens, profiles, users RESTART IDENTITY CASCADE");
         }
+
+        private void registerUser(String username, String password) {
+                authService.register(RegisterRequest.builder()
+                                .username(username)
+                                .password(password)
+                                .build());
+        }
+
+        private String loginAndGetToken(String username, String password) throws Exception {
+                LoginRequest loginRequest = LoginRequest.builder()
+                                .username(username)
+                                .password(password)
+                                .build();
+
+                String jsonResponse = mockMvc.perform(post("/api/v1/auth/login")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(loginRequest)))
+                        .andReturn().getResponse().getContentAsString();
+
+                JsonNode root = objectMapper.readTree(jsonResponse);
+                return root.get("data").get("token").asText();
+        }
+
+        private String loginAndGetRefreshToken(String username, String password) throws Exception {
+                LoginRequest loginRequest = LoginRequest.builder()
+                                .username(username)
+                                .password(password)
+                                .build();
+
+                String jsonResponse = mockMvc.perform(post("/api/v1/auth/login")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(loginRequest)))
+                        .andReturn().getResponse().getContentAsString();
+
+                JsonNode root = objectMapper.readTree(jsonResponse);
+                return root.get("data").get("refreshToken").asText();
+        }
+
+        // ==========================================
+        // POST /api/v1/auth/register
+        // ==========================================
 
         @Test
         void register_Success_ShouldReturnCreated() throws Exception {
@@ -65,34 +103,31 @@ class AuthControllerTest {
                                 .password("password123")
                                 .build();
 
-                String message = getMessage("success.register");
-
-                mockMvc.perform(post("/api/auth/register")
+                mockMvc.perform(post("/api/v1/auth/register")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request)))
-                                .andExpect(status().isCreated())
-                                .andExpect(jsonPath("$.code").value(201))
-                                .andExpect(jsonPath("$.message").value(message))
-                                .andExpect(jsonPath("$.data.username").value("testuser"))
-                                .andExpect(jsonPath("$.data.id").exists());
+                        .andExpect(status().isCreated())
+                        .andExpect(jsonPath("$.code").value(201))
+                        .andExpect(jsonPath("$.message").value(getMessage("success.register")))
+                        .andExpect(jsonPath("$.data.username").value("testuser"))
+                        .andExpect(jsonPath("$.data.id").exists())
+                        .andExpect(jsonPath("$.data.role").value("USER"));
         }
 
         @Test
-        void register_ValidationFailed_ShouldReturnBadRequest() throws Exception {
+        void register_ValidationFailed_BlankFields_ShouldReturnBadRequest() throws Exception {
                 RegisterRequest request = RegisterRequest.builder()
-                                .username("") // Invalid
-                                .password("pwd") // Invalid
+                                .username("")
+                                .password("pwd")
                                 .build();
-                
-                String message = getMessage("error.validation");
 
-                mockMvc.perform(post("/api/auth/register")
+                mockMvc.perform(post("/api/v1/auth/register")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request)))
-                                .andExpect(status().isBadRequest())
-                                .andExpect(jsonPath("$.code").value(400))
-                                .andExpect(jsonPath("$.message").value(message))
-                                .andExpect(jsonPath("$.errors").exists());
+                        .andExpect(status().isBadRequest())
+                        .andExpect(jsonPath("$.code").value(400))
+                        .andExpect(jsonPath("$.message").value(getMessage("error.validation")))
+                        .andExpect(jsonPath("$.errors").exists());
         }
 
         @Test
@@ -102,72 +137,73 @@ class AuthControllerTest {
                                 .password("password123")
                                 .build();
 
-                // Create user first
-                mockMvc.perform(post("/api/auth/register")
+                // Register first
+                mockMvc.perform(post("/api/v1/auth/register")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request)))
-                                .andExpect(status().isCreated());
-                
-                String message = getMessage("error.validation");
-                String expectedDuplicateError = getMessage("error.username.duplicate");
+                        .andExpect(status().isCreated());
 
                 // Try to register again
-                mockMvc.perform(post("/api/auth/register")
+                mockMvc.perform(post("/api/v1/auth/register")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request)))
-                                .andExpect(status().isBadRequest())
-                                .andExpect(jsonPath("$.code").value(400))
-                                .andExpect(jsonPath("$.message").value(message))
-                                .andExpect(jsonPath("$.errors.username[0]").value(expectedDuplicateError));
+                        .andExpect(status().isBadRequest())
+                        .andExpect(jsonPath("$.code").value(400))
+                        .andExpect(jsonPath("$.message").value(getMessage("error.validation")))
+                        .andExpect(jsonPath("$.errors.username[0]").value(getMessage("error.username.duplicate")));
         }
 
+        // ==========================================
+        // POST /api/v1/auth/login
+        // ==========================================
+
         @Test
-        void login_Success_ShouldReturnToken() throws Exception {
-                String password = "password123";
-                RegisterRequest registerRequest = RegisterRequest.builder()
-                                .username("testlogin")
-                                .password(password)
-                                .build();
-                authServiceRegister(registerRequest);
+        void login_Success_ShouldReturnTokens() throws Exception {
+                registerUser("testlogin", "password123");
 
                 LoginRequest loginRequest = LoginRequest.builder()
                                 .username("testlogin")
-                                .password(password)
+                                .password("password123")
                                 .build();
 
-                String message = getMessage("success.login");
-
-                mockMvc.perform(post("/api/auth/login")
+                mockMvc.perform(post("/api/v1/auth/login")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(loginRequest)))
-                                .andExpect(status().isOk())
-                                .andExpect(jsonPath("$.code").value(200))
-                                .andExpect(jsonPath("$.message").value(message))
-                                .andExpect(jsonPath("$.data.token").exists())
-                                .andExpect(jsonPath("$.data.refreshToken").exists());
+                        .andExpect(status().isOk())
+                        .andExpect(jsonPath("$.code").value(200))
+                        .andExpect(jsonPath("$.message").value(getMessage("success.login")))
+                        .andExpect(jsonPath("$.data.token").exists())
+                        .andExpect(jsonPath("$.data.refreshToken").exists());
         }
 
         @Test
         void login_BadCredentials_ShouldReturnUnauthorized() throws Exception {
-                RegisterRequest registerRequest = RegisterRequest.builder()
-                                .username("testbadcreds")
-                                .password("password123")
-                                .build();
-                authServiceRegister(registerRequest);
+                registerUser("testbadcreds", "password123");
 
                 LoginRequest loginRequest = LoginRequest.builder()
                                 .username("testbadcreds")
                                 .password("wrongpassword")
                                 .build();
-                
-                String message = getMessage("error.bad-credentials");
 
-                mockMvc.perform(post("/api/auth/login")
+                mockMvc.perform(post("/api/v1/auth/login")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(loginRequest)))
-                                .andExpect(status().isUnauthorized())
-                                .andExpect(jsonPath("$.code").value(401))
-                                .andExpect(jsonPath("$.message").value(message));
+                        .andExpect(status().isUnauthorized())
+                        .andExpect(jsonPath("$.code").value(401))
+                        .andExpect(jsonPath("$.message").value(getMessage("error.bad-credentials")));
+        }
+
+        @Test
+        void login_UserNotFound_ShouldReturnNotFound() throws Exception {
+                LoginRequest loginRequest = LoginRequest.builder()
+                                .username("nonexistent")
+                                .password("password123")
+                                .build();
+
+                mockMvc.perform(post("/api/v1/auth/login")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(loginRequest)))
+                        .andExpect(status().isNotFound());
         }
 
         @Test
@@ -177,150 +213,144 @@ class AuthControllerTest {
                                 .password("")
                                 .build();
 
-                String message = getMessage("error.validation");
-
-                mockMvc.perform(post("/api/auth/login")
+                mockMvc.perform(post("/api/v1/auth/login")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(request)))
-                                .andExpect(status().isBadRequest())
-                                .andExpect(jsonPath("$.code").value(400))
-                                .andExpect(jsonPath("$.message").value(message))
-                                .andExpect(jsonPath("$.errors").exists());
+                        .andExpect(status().isBadRequest())
+                        .andExpect(jsonPath("$.code").value(400))
+                        .andExpect(jsonPath("$.message").value(getMessage("error.validation")))
+                        .andExpect(jsonPath("$.errors").exists());
         }
 
-        @Autowired
-        private AuthService authService;
-
-        private void authServiceRegister(RegisterRequest request) {
-                authService.register(request);
-        }
+        // ==========================================
+        // GET /api/v1/auth/me
+        // ==========================================
 
         @Test
         void me_Success_ShouldReturnUserDetails() throws Exception {
-                String password = "password123";
-                RegisterRequest registerRequest = RegisterRequest.builder()
-                                .username("testme")
-                                .password(password)
-                                .build();
-                authServiceRegister(registerRequest);
+                registerUser("testme", "password123");
+                String token = loginAndGetToken("testme", "password123");
 
-                LoginRequest loginRequest = LoginRequest.builder()
-                                .username("testme")
-                                .password(password)
-                                .build();
-
-                String token = authService.login(loginRequest).getToken();
-                String message = getMessage("success.me");
-
-                mockMvc.perform(get("/api/auth/me")
-                                .header("Authorization", "Bearer " + token)
-                                .contentType(MediaType.APPLICATION_JSON))
-                                .andExpect(status().isOk())
-                                .andExpect(jsonPath("$.code").value(200))
-                                .andExpect(jsonPath("$.message").value(message))
-                                .andExpect(jsonPath("$.data.username").value("testme"))
-                                .andExpect(jsonPath("$.data.id").exists())
-                                .andExpect(jsonPath("$.data.role").value("USER"));
+                mockMvc.perform(get("/api/v1/auth/me")
+                                .header("Authorization", "Bearer " + token))
+                        .andExpect(status().isOk())
+                        .andExpect(jsonPath("$.code").value(200))
+                        .andExpect(jsonPath("$.message").value(getMessage("success.me")))
+                        .andExpect(jsonPath("$.data.username").value("testme"))
+                        .andExpect(jsonPath("$.data.id").exists())
+                        .andExpect(jsonPath("$.data.role").value("USER"));
         }
 
         @Test
-        void me_Unauthorized_ShouldReturnForbidden() throws Exception {
-                mockMvc.perform(get("/api/auth/me")
-                                .contentType(MediaType.APPLICATION_JSON))
-                                .andExpect(status().isForbidden());
+        void me_NoToken_ShouldReturnForbidden() throws Exception {
+                mockMvc.perform(get("/api/v1/auth/me"))
+                        .andExpect(status().isForbidden());
         }
+
+        @Test
+        void me_InvalidToken_ShouldReturnForbidden() throws Exception {
+                mockMvc.perform(get("/api/v1/auth/me")
+                                .header("Authorization", "Bearer invalid-jwt-token"))
+                        .andExpect(status().isForbidden());
+        }
+
+        // ==========================================
+        // POST /api/v1/auth/refresh
+        // ==========================================
 
         @Test
         void refreshToken_Success_ShouldReturnNewTokens() throws Exception {
-                String password = "password123";
-                RegisterRequest registerRequest = RegisterRequest.builder()
-                        .username("testrefresh")
-                        .password(password)
-                        .build();
-                authServiceRegister(registerRequest);
-
-                LoginRequest loginRequest = LoginRequest.builder()
-                        .username("testrefresh")
-                        .password(password)
-                        .build();
-
-                // Perform login to get refresh token
-                String jsonResponse = mockMvc.perform(post("/api/auth/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(loginRequest)))
-                        .andReturn().getResponse().getContentAsString();
-
-                // Extract refresh token from response
-                tools.jackson.databind.JsonNode rootResource = objectMapper.readTree(jsonResponse);
-                String refreshToken = rootResource.get("data").get("refreshToken").asText();
+                registerUser("testrefresh", "password123");
+                String refreshToken = loginAndGetRefreshToken("testrefresh", "password123");
 
                 TokenRefreshRequest refreshRequest = TokenRefreshRequest.builder()
-                        .refreshToken(refreshToken)
-                        .build();
+                                .refreshToken(refreshToken)
+                                .build();
 
-                mockMvc.perform(post("/api/auth/refresh")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(refreshRequest)))
+                mockMvc.perform(post("/api/v1/auth/refresh")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(refreshRequest)))
                         .andExpect(status().isOk())
                         .andExpect(jsonPath("$.code").value(200))
                         .andExpect(jsonPath("$.message").value("Token refreshed successfully"))
                         .andExpect(jsonPath("$.data.token").exists())
                         .andExpect(jsonPath("$.data.refreshToken").exists())
-                        .andExpect(jsonPath("$.data.refreshToken").value(not(refreshToken))); // Ensure it rotated
+                        .andExpect(jsonPath("$.data.refreshToken").value(not(refreshToken))); // rotated
         }
 
         @Test
         void refreshToken_InvalidToken_ShouldReturnForbidden() throws Exception {
                 TokenRefreshRequest refreshRequest = TokenRefreshRequest.builder()
-                        .refreshToken("invalid-token")
-                        .build();
+                                .refreshToken("invalid-token")
+                                .build();
 
-                mockMvc.perform(post("/api/auth/refresh")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(refreshRequest)))
+                mockMvc.perform(post("/api/v1/auth/refresh")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(refreshRequest)))
                         .andExpect(status().isForbidden())
                         .andExpect(jsonPath("$.code").value(403))
                         .andExpect(jsonPath("$.message").exists());
         }
 
         @Test
+        void refreshToken_UsedToken_ShouldReturnForbidden() throws Exception {
+                registerUser("testusedtoken", "password123");
+                String refreshToken = loginAndGetRefreshToken("testusedtoken", "password123");
+
+                TokenRefreshRequest refreshRequest = TokenRefreshRequest.builder()
+                                .refreshToken(refreshToken)
+                                .build();
+
+                // First use should succeed
+                mockMvc.perform(post("/api/v1/auth/refresh")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(refreshRequest)))
+                        .andExpect(status().isOk());
+
+                // Second use with the same old token should fail (it was rotated/deleted)
+                mockMvc.perform(post("/api/v1/auth/refresh")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(refreshRequest)))
+                        .andExpect(status().isForbidden());
+        }
+
+        // ==========================================
+        // POST /api/v1/auth/logout
+        // ==========================================
+
+        @Test
         void logout_Success_ShouldReturnOk() throws Exception {
-                String password = "password123";
-                RegisterRequest registerRequest = RegisterRequest.builder()
-                        .username("testlogout")
-                        .password(password)
-                        .build();
-                authServiceRegister(registerRequest);
-
-                LoginRequest loginRequest = LoginRequest.builder()
-                        .username("testlogout")
-                        .password(password)
-                        .build();
-
-                String jsonResponse = mockMvc.perform(post("/api/auth/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(loginRequest)))
-                        .andReturn().getResponse().getContentAsString();
-
-                tools.jackson.databind.JsonNode rootResource = objectMapper.readTree(jsonResponse);
-                String refreshToken = rootResource.get("data").get("refreshToken").asText();
+                registerUser("testlogout", "password123");
+                String refreshToken = loginAndGetRefreshToken("testlogout", "password123");
 
                 TokenRefreshRequest logoutRequest = TokenRefreshRequest.builder()
-                        .refreshToken(refreshToken)
-                        .build();
+                                .refreshToken(refreshToken)
+                                .build();
 
-                // Call logout
-                mockMvc.perform(post("/api/auth/logout")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(logoutRequest)))
+                mockMvc.perform(post("/api/v1/auth/logout")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(logoutRequest)))
                         .andExpect(status().isOk())
                         .andExpect(jsonPath("$.code").value(200))
                         .andExpect(jsonPath("$.message").value("Logged out successfully"));
-                        
-                // Verify the refresh token config no longer exists
-                mockMvc.perform(post("/api/auth/refresh")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(logoutRequest)))
+
+                // Verify refresh token is invalidated
+                mockMvc.perform(post("/api/v1/auth/refresh")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(logoutRequest)))
                         .andExpect(status().isForbidden());
+        }
+
+        @Test
+        void logout_InvalidToken_ShouldStillReturnOk() throws Exception {
+                TokenRefreshRequest logoutRequest = TokenRefreshRequest.builder()
+                                .refreshToken("nonexistent-token")
+                                .build();
+
+                mockMvc.perform(post("/api/v1/auth/logout")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(logoutRequest)))
+                        .andExpect(status().isOk())
+                        .andExpect(jsonPath("$.code").value(200));
         }
 }
