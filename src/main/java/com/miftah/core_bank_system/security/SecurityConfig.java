@@ -50,6 +50,8 @@ public class SecurityConfig {
                                                 .requestMatchers("/api/v1/transactions/me", "/api/v1/audits/me", "/api/v1/notifications/**").hasRole("USER")
 
                                                 .requestMatchers("/api/v1/accounts/**", "/api/v1/audits/**").hasRole("ADMIN")
+                                                .requestMatchers("/api/v1/transactions/deposit", "/api/v1/transactions/all").hasRole("ADMIN")
+                                                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/transactions").hasRole("ADMIN")
                                                 .requestMatchers("/api/v1/transactions/**").hasAnyRole("ADMIN", "USER")
                                                 .anyRequest().authenticated())
                                 .sessionManagement(session -> session
