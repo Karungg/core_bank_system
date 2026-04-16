@@ -63,6 +63,10 @@ class ProfileServiceTest {
                 .build();
     }
 
+    // ==========================================
+    // create
+    // ==========================================
+
     @Test
     void create_Success() {
         when(profileRepository.findByUserId(user.getId())).thenReturn(Optional.empty());
@@ -90,10 +94,11 @@ class ProfileServiceTest {
         });
 
         assertEquals("user", exception.getField());
+        verify(profileRepository, never()).save(any());
     }
 
     @Test
-    void create_DuplicateFields_ThrowsBatchException() {
+    void create_DuplicateIdentityNumberAndPhone_ThrowsBatchException() {
         when(profileRepository.findByUserId(user.getId())).thenReturn(Optional.empty());
         when(profileRepository.existsByIdentityNumber(request.getIdentityNumber())).thenReturn(true);
         when(profileRepository.existsByPhone(request.getPhone())).thenReturn(true);
@@ -105,7 +110,44 @@ class ProfileServiceTest {
         assertNotNull(exception.getErrors());
         assertTrue(exception.getErrors().containsKey("identityNumber"));
         assertTrue(exception.getErrors().containsKey("phone"));
+        verify(profileRepository, never()).save(any());
     }
+
+    @Test
+    void create_DuplicateIdentityNumberOnly_ThrowsException() {
+        when(profileRepository.findByUserId(user.getId())).thenReturn(Optional.empty());
+        when(profileRepository.existsByIdentityNumber(request.getIdentityNumber())).thenReturn(true);
+        when(profileRepository.existsByPhone(request.getPhone())).thenReturn(false);
+
+        DuplicateResourceException exception = assertThrows(DuplicateResourceException.class, () -> {
+            profileService.create(user, request);
+        });
+
+        assertNotNull(exception.getErrors());
+        assertTrue(exception.getErrors().containsKey("identityNumber"));
+        assertFalse(exception.getErrors().containsKey("phone"));
+        verify(profileRepository, never()).save(any());
+    }
+
+    @Test
+    void create_DuplicatePhoneOnly_ThrowsException() {
+        when(profileRepository.findByUserId(user.getId())).thenReturn(Optional.empty());
+        when(profileRepository.existsByIdentityNumber(request.getIdentityNumber())).thenReturn(false);
+        when(profileRepository.existsByPhone(request.getPhone())).thenReturn(true);
+
+        DuplicateResourceException exception = assertThrows(DuplicateResourceException.class, () -> {
+            profileService.create(user, request);
+        });
+
+        assertNotNull(exception.getErrors());
+        assertFalse(exception.getErrors().containsKey("identityNumber"));
+        assertTrue(exception.getErrors().containsKey("phone"));
+        verify(profileRepository, never()).save(any());
+    }
+
+    // ==========================================
+    // get (by currently authenticated user)
+    // ==========================================
 
     @Test
     void get_Success() {
@@ -128,6 +170,10 @@ class ProfileServiceTest {
         assertEquals("userId", exception.getFieldName());
     }
 
+    // ==========================================
+    // update
+    // ==========================================
+
     @Test
     void update_Success() {
         when(profileRepository.findByUserId(user.getId())).thenReturn(Optional.of(profile));
@@ -142,6 +188,19 @@ class ProfileServiceTest {
 
         assertNotNull(response);
         assertEquals("Jane Doe", response.getName());
+        verify(profileRepository).save(profile);
+    }
+
+    @Test
+    void update_ProfileNotFound_ThrowsException() {
+        when(profileRepository.findByUserId(user.getId())).thenReturn(Optional.empty());
+
+        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () -> {
+            profileService.update(user, request);
+        });
+
+        assertEquals("userId", exception.getFieldName());
+        verify(profileRepository, never()).save(any());
     }
 
     @Test
@@ -164,7 +223,12 @@ class ProfileServiceTest {
         assertNotNull(exception.getErrors());
         assertTrue(exception.getErrors().containsKey("identityNumber"));
         assertTrue(exception.getErrors().containsKey("phone"));
+        verify(profileRepository, never()).save(any());
     }
+
+    // ==========================================
+    // getAll
+    // ==========================================
 
     @Test
     void getAll_Success() {
@@ -180,6 +244,24 @@ class ProfileServiceTest {
         assertEquals(1, response.getTotalElements());
         assertEquals(profile.getIdentityNumber(), response.getContent().get(0).getIdentityNumber());
     }
+
+    @Test
+    void getAll_Empty_ReturnsEmptyPage() {
+        Pageable pageable = PageRequest.of(0, 10);
+        Page<Profile> page = new PageImpl<>(java.util.List.of());
+
+        when(profileRepository.findAll(pageable)).thenReturn(page);
+
+        Page<ProfileResponse> response = profileService.getAll(pageable);
+
+        assertNotNull(response);
+        assertEquals(0, response.getTotalElements());
+        assertTrue(response.getContent().isEmpty());
+    }
+
+    // ==========================================
+    // getById
+    // ==========================================
 
     @Test
     void getById_Success() {
