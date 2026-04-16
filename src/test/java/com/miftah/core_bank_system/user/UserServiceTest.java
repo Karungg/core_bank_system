@@ -201,17 +201,30 @@ class UserServiceTest {
     void updateAdmin_Success() {
         UUID userId = UUID.randomUUID();
         User existingUser = User.builder().id(userId).username("olduser").role(Role.ADMIN).build();
-        UpdateUserRequest updateRequest = UpdateUserRequest.builder().username("newusername").password("newpassword")
-                .build();
+        UpdateUserRequest updateRequest = UpdateUserRequest.builder().username("newusername").password("newpassword").build();
 
         when(userRepository.findById(userId)).thenReturn(Optional.of(existingUser));
-        when(userRepository.save(existingUser)).thenReturn(existingUser);
+        when(userRepository.existsByUsernameAndIdNot(updateRequest.getUsername(), userId)).thenReturn(false);
+        when(passwordEncoder.encode("newpassword")).thenReturn("encodedPassword");
 
         UserResponse response = userService.updateAdmin(userId, updateRequest);
 
         assertNotNull(response);
         assertEquals(updateRequest.getUsername(), response.getUsername());
-        verify(userRepository).save(any(User.class));
+        verify(userRepository).save(existingUser);
+    }
+
+    @Test
+    void updateAdmin_DuplicateUsername_ThrowsException() {
+        UUID userId = UUID.randomUUID();
+        User existingUser = User.builder().id(userId).username("olduser").role(Role.ADMIN).build();
+        UpdateUserRequest updateRequest = UpdateUserRequest.builder().username("newusername").password("newpassword").build();
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(existingUser));
+        when(userRepository.existsByUsernameAndIdNot(updateRequest.getUsername(), userId)).thenReturn(true);
+
+        assertThrows(DuplicateResourceException.class, () -> userService.updateAdmin(userId, updateRequest));
+        verify(userRepository, never()).save(any(User.class));
     }
 
     @Test
@@ -245,16 +258,13 @@ class UserServiceTest {
 
         assertThrows(ResourceNotFoundException.class,
                 () -> userService.deleteAdmin(userId));
-        assertThrows(ResourceNotFoundException.class,
-                () -> userService.deleteAdmin(userId));
     }
 
     @Test
     void getAll_Success() {
         Pageable pageable = PageRequest.of(0, 10);
         User user = User.builder().id(UUID.randomUUID()).username("user").role(Role.USER).build();
-        Page<User> page = new PageImpl<>(
-                List.of(user));
+        Page<User> page = new PageImpl<>(List.of(user));
 
         when(userRepository.findAll(pageable)).thenReturn(page);
 
