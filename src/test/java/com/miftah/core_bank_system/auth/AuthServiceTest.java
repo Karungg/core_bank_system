@@ -1,17 +1,10 @@
 package com.miftah.core_bank_system.auth;
 
-import com.miftah.core_bank_system.audit.AuditAction;
-import com.miftah.core_bank_system.audit.AuditService;
-import com.miftah.core_bank_system.exception.AccountLockedException;
-import com.miftah.core_bank_system.exception.DuplicateResourceException;
-import com.miftah.core_bank_system.exception.ResourceNotFoundException;
-import com.miftah.core_bank_system.exception.TokenRefreshException;
-import com.miftah.core_bank_system.notification.event.LoginEvent;
-import com.miftah.core_bank_system.security.JwtService;
-import com.miftah.core_bank_system.user.Role;
-import com.miftah.core_bank_system.user.User;
-import com.miftah.core_bank_system.user.UserRepository;
-import com.miftah.core_bank_system.user.UserResponse;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.Optional;
+import java.util.UUID;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -26,10 +19,18 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.Optional;
-import java.util.UUID;
+import com.miftah.core_bank_system.audit.AuditAction;
+import com.miftah.core_bank_system.audit.AuditService;
+import com.miftah.core_bank_system.exception.AccountLockedException;
+import com.miftah.core_bank_system.exception.DuplicateResourceException;
+import com.miftah.core_bank_system.exception.ResourceNotFoundException;
+import com.miftah.core_bank_system.exception.TokenRefreshException;
+import com.miftah.core_bank_system.notification.event.LoginEvent;
+import com.miftah.core_bank_system.security.JwtService;
+import com.miftah.core_bank_system.user.Role;
+import com.miftah.core_bank_system.user.User;
+import com.miftah.core_bank_system.user.UserRepository;
+import com.miftah.core_bank_system.user.UserResponse;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -80,9 +81,7 @@ class AuthServiceTest {
                 .build();
     }
 
-    // ==========================================
-    // register
-    // ==========================================
+
 
     @Test
     void register_Success() {
@@ -106,9 +105,7 @@ class AuthServiceTest {
         verify(userRepository, never()).save(any(User.class));
     }
 
-    // ==========================================
-    // login
-    // ==========================================
+
 
     @Test
     void login_Success_ShouldReturnTokenAndResetAttempts() {
@@ -195,9 +192,7 @@ class AuthServiceTest {
         assertEquals("mock-token", response.getToken());
     }
 
-    // ==========================================
-    // me
-    // ==========================================
+
 
     @Test
     void me_Success() {
@@ -220,9 +215,7 @@ class AuthServiceTest {
         assertEquals("id", ex.getFieldName());
     }
 
-    // ==========================================
-    // refreshToken
-    // ==========================================
+
 
     @Test
     void refreshToken_Success_ShouldRotateTokens() {
@@ -262,9 +255,7 @@ class AuthServiceTest {
         assertEquals("invalid-refresh-token", ex.getToken());
     }
 
-    // ==========================================
-    // logout
-    // ==========================================
+
 
     @Test
     void logout_Success_ShouldDeleteTokenAndAudit() {
