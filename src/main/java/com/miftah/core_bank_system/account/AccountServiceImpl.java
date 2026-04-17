@@ -316,8 +316,6 @@ public class AccountServiceImpl implements AccountService {
         applicationEventPublisher.publishEvent(new PinChangedEvent(user.getId(), user.getUsername(), account.getId()));
     }
 
-    // ========== Private Helpers ==========
-
     private Account findAccountByIdOrThrow(UUID id) {
         return accountRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Account", id));
@@ -326,11 +324,6 @@ public class AccountServiceImpl implements AccountService {
     private User findUserByIdOrThrow(UUID id) {
         return userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User", id));
-    }
-
-    private User findUserByUsernameOrThrow(String username) {
-        return userRepository.findByUsername(username)
-                .orElseThrow(() -> new ResourceNotFoundException("User", "username", username));
     }
 
     private MutationResponse toMutationResponse(Transaction transaction, UUID accountId) {
