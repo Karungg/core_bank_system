@@ -1,12 +1,8 @@
 package com.miftah.core_bank_system.user;
 
-import com.miftah.core_bank_system.TestcontainersConfiguration;
-import com.miftah.core_bank_system.auth.AuthService;
-import com.miftah.core_bank_system.auth.LoginRequest;
-import com.miftah.core_bank_system.auth.RegisterRequest;
-import com.miftah.core_bank_system.profile.Gender;
-import com.miftah.core_bank_system.profile.ProfileRequest;
-import com.miftah.core_bank_system.profile.ProfileType;
+import java.time.LocalDate;
+import java.util.Locale;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,10 +14,16 @@ import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+
 import tools.jackson.databind.ObjectMapper;
 
-import java.time.LocalDate;
-import java.util.Locale;
+import com.miftah.core_bank_system.TestcontainersConfiguration;
+import com.miftah.core_bank_system.auth.AuthService;
+import com.miftah.core_bank_system.auth.LoginRequest;
+import com.miftah.core_bank_system.auth.RegisterRequest;
+import com.miftah.core_bank_system.profile.Gender;
+import com.miftah.core_bank_system.profile.ProfileRequest;
+import com.miftah.core_bank_system.profile.ProfileType;
 
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.is;

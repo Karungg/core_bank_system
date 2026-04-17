@@ -1,26 +1,30 @@
 package com.miftah.core_bank_system.user;
 
-import com.miftah.core_bank_system.auth.RegisterRequest;
-import com.miftah.core_bank_system.exception.DuplicateResourceException;
-import com.miftah.core_bank_system.exception.ResourceNotFoundException;
-import com.miftah.core_bank_system.profile.*;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.security.crypto.password.PasswordEncoder;
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.time.LocalDate;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import com.miftah.core_bank_system.auth.RegisterRequest;
+import com.miftah.core_bank_system.exception.DuplicateResourceException;
+import com.miftah.core_bank_system.exception.ResourceNotFoundException;
+import com.miftah.core_bank_system.profile.Gender;
+import com.miftah.core_bank_system.profile.ProfileRequest;
+import com.miftah.core_bank_system.profile.ProfileResponse;
+import com.miftah.core_bank_system.profile.ProfileService;
+import com.miftah.core_bank_system.profile.ProfileType;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
