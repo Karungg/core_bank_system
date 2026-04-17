@@ -1,5 +1,27 @@
 package com.miftah.core_bank_system.account;
 
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.crypto.password.PasswordEncoder;
+
 import com.miftah.core_bank_system.audit.AuditAction;
 import com.miftah.core_bank_system.audit.AuditService;
 import com.miftah.core_bank_system.config.EncryptionUtil;
@@ -17,27 +39,6 @@ import com.miftah.core_bank_system.transaction.TransactionRepository;
 import com.miftah.core_bank_system.transaction.TransactionType;
 import com.miftah.core_bank_system.user.User;
 import com.miftah.core_bank_system.user.UserRepository;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specification;
-import org.springframework.security.crypto.password.PasswordEncoder;
-
-import java.math.BigDecimal;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -115,9 +116,7 @@ class AccountServiceImplTest {
                 .build();
     }
 
-    // ==========================================
-    // create
-    // ==========================================
+
 
     @Test
     void create_Success() {
@@ -167,9 +166,7 @@ class AccountServiceImplTest {
         verify(accountRepository).save(any(Account.class));
     }
 
-    // ==========================================
-    // getById
-    // ==========================================
+
 
     @Test
     void getById_Success() {
@@ -191,9 +188,7 @@ class AccountServiceImplTest {
         assertThrows(ResourceNotFoundException.class, () -> accountService.getById(id));
     }
 
-    // ==========================================
-    // getAll
-    // ==========================================
+
 
     @Test
     void getAll_Success() {
@@ -207,9 +202,7 @@ class AccountServiceImplTest {
         assertEquals(account.getId(), response.getContent().get(0).getId());
     }
 
-    // ==========================================
-    // getByUserId
-    // ==========================================
+
 
     @Test
     void getByUserId_Success_ShouldReturnActiveAccounts() {
@@ -235,9 +228,7 @@ class AccountServiceImplTest {
         assertTrue(responses.isEmpty());
     }
 
-    // ==========================================
-    // getByIdAndUserId
-    // ==========================================
+
 
     @Test
     void getByIdAndUserId_Success() {
@@ -261,9 +252,7 @@ class AccountServiceImplTest {
                 () -> accountService.getByIdAndUserId(accountId, userId));
     }
 
-    // ==========================================
-    // getBalance
-    // ==========================================
+
 
     @Test
     void getBalance_WithUserId_ShouldReturnBalance() {
@@ -300,9 +289,7 @@ class AccountServiceImplTest {
                 () -> accountService.getBalance(accountId, user.getId()));
     }
 
-    // ==========================================
-    // getMutations
-    // ==========================================
+
 
     @Test
     @SuppressWarnings("unchecked")
@@ -331,9 +318,7 @@ class AccountServiceImplTest {
         assertEquals(tx.getId(), result.getContent().get(0).getTransactionId());
     }
 
-    // ==========================================
-    // update
-    // ==========================================
+
 
     @Test
     void update_Success() {
@@ -365,9 +350,7 @@ class AccountServiceImplTest {
                 () -> accountService.update(fakeId, accountRequest));
     }
 
-    // ==========================================
-    // delete
-    // ==========================================
+
 
     @Test
     void delete_ActiveAccount_ShouldSoftDelete() {
@@ -399,9 +382,7 @@ class AccountServiceImplTest {
         assertThrows(ResourceNotFoundException.class, () -> accountService.delete(fakeId));
     }
 
-    // ==========================================
-    // updateStatus
-    // ==========================================
+
 
     @Test
     void updateStatus_ActiveToFrozen_ShouldSucceedAndPublishEvent() {
@@ -473,9 +454,7 @@ class AccountServiceImplTest {
                 () -> accountService.updateStatus(account.getId(), request));
     }
 
-    // ==========================================
-    // changePin
-    // ==========================================
+
 
     @Test
     void changePin_Success_ShouldUpdatePinAndPublishEvent() {
