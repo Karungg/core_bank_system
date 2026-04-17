@@ -7,12 +7,17 @@ import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -31,7 +36,7 @@ public class AuditController {
             @RequestParam(required = false) AuditAction action,
             @RequestParam(required = false) Instant startDate,
             @RequestParam(required = false) Instant endDate,
-            @PageableDefault(size = 10, sort = "createdAt", direction = org.springframework.data.domain.Sort.Direction.DESC) Pageable pageable) {
+            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
 
         Page<AuditLogResponse> response = auditService.getLogs(userId, action, startDate, endDate, pageable);
         String message = messageSource.getMessage("success.get", null, LocaleContextHolder.getLocale());
@@ -47,7 +52,7 @@ public class AuditController {
             @RequestParam(required = false) AuditAction action,
             @RequestParam(required = false) Instant startDate,
             @RequestParam(required = false) Instant endDate,
-            @PageableDefault(size = 10, sort = "createdAt", direction = org.springframework.data.domain.Sort.Direction.DESC) Pageable pageable) {
+            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
 
         Page<AuditLogResponse> response = auditService.getMyLogs(user, action, startDate, endDate, pageable);
         String message = messageSource.getMessage("success.get", null, LocaleContextHolder.getLocale());
