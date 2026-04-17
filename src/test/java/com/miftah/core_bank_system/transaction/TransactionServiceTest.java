@@ -1,13 +1,13 @@
 package com.miftah.core_bank_system.transaction;
 
-import com.miftah.core_bank_system.account.Account;
-import com.miftah.core_bank_system.account.AccountRepository;
-import com.miftah.core_bank_system.account.AccountStatus;
-import com.miftah.core_bank_system.audit.AuditAction;
-import com.miftah.core_bank_system.audit.AuditService;
-import com.miftah.core_bank_system.exception.*;
-import com.miftah.core_bank_system.notification.event.TransactionCompletedEvent;
-import com.miftah.core_bank_system.user.User;
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -21,13 +21,20 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.math.BigDecimal;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.temporal.ChronoUnit;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import com.miftah.core_bank_system.account.Account;
+import com.miftah.core_bank_system.account.AccountRepository;
+import com.miftah.core_bank_system.account.AccountStatus;
+import com.miftah.core_bank_system.audit.AuditAction;
+import com.miftah.core_bank_system.audit.AuditService;
+import com.miftah.core_bank_system.exception.AccountLockedException;
+import com.miftah.core_bank_system.exception.AccountNotActiveException;
+import com.miftah.core_bank_system.exception.InsufficientBalanceException;
+import com.miftah.core_bank_system.exception.InvalidPinException;
+import com.miftah.core_bank_system.exception.ResourceNotFoundException;
+import com.miftah.core_bank_system.exception.SameAccountTransactionException;
+import com.miftah.core_bank_system.exception.UnauthorizedTransactionException;
+import com.miftah.core_bank_system.notification.event.TransactionCompletedEvent;
+import com.miftah.core_bank_system.user.User;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -90,9 +97,7 @@ class TransactionServiceTest {
                 .build();
     }
 
-    // =====================================
-    // TRANSFER
-    // =====================================
+
 
     @Test
     void transfer_Success() {
@@ -285,9 +290,7 @@ class TransactionServiceTest {
     }
 
 
-    // =====================================
-    // DEPOSIT
-    // =====================================
+
 
     @Test
     void deposit_Success() {
@@ -328,9 +331,7 @@ class TransactionServiceTest {
         assertThrows(AccountNotActiveException.class, () -> transactionService.deposit(user, request));
     }
 
-    // =====================================
-    // WITHDRAWAL
-    // =====================================
+
 
     @Test
     void withdrawal_Success() {
@@ -372,9 +373,7 @@ class TransactionServiceTest {
         assertThrows(UnauthorizedTransactionException.class, () -> transactionService.withdrawal(otherUser, request)); // other user calling it
     }
 
-    // =====================================
-    // QUERY METHODS
-    // =====================================
+
 
     @Test
     void getTransactions_Success() {

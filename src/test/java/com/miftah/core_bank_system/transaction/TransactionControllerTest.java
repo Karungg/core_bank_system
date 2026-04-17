@@ -1,16 +1,9 @@
 package com.miftah.core_bank_system.transaction;
 
-import com.miftah.core_bank_system.TestcontainersConfiguration;
-import com.miftah.core_bank_system.account.Account;
-import com.miftah.core_bank_system.account.AccountRepository;
-import com.miftah.core_bank_system.account.AccountStatus;
-import com.miftah.core_bank_system.auth.AuthService;
-import com.miftah.core_bank_system.auth.LoginRequest;
-import com.miftah.core_bank_system.auth.RegisterRequest;
-import com.miftah.core_bank_system.auth.TokenResponse;
-import com.miftah.core_bank_system.user.Role;
-import com.miftah.core_bank_system.user.User;
-import com.miftah.core_bank_system.user.UserRepository;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.Locale;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,11 +16,20 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+
 import tools.jackson.databind.ObjectMapper;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.util.Locale;
+import com.miftah.core_bank_system.TestcontainersConfiguration;
+import com.miftah.core_bank_system.account.Account;
+import com.miftah.core_bank_system.account.AccountRepository;
+import com.miftah.core_bank_system.account.AccountStatus;
+import com.miftah.core_bank_system.auth.AuthService;
+import com.miftah.core_bank_system.auth.LoginRequest;
+import com.miftah.core_bank_system.auth.RegisterRequest;
+import com.miftah.core_bank_system.auth.TokenResponse;
+import com.miftah.core_bank_system.user.Role;
+import com.miftah.core_bank_system.user.User;
+import com.miftah.core_bank_system.user.UserRepository;
 
 import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -124,9 +126,7 @@ public class TransactionControllerTest {
         adminToken = authService.login(LoginRequest.builder().username("admin").password("password").build()).getToken();
     }
 
-    // ==========================================
-    // TRANSFER
-    // ==========================================
+
 
     @Test
     void transfer_Success() throws Exception {
@@ -188,9 +188,7 @@ public class TransactionControllerTest {
     }
 
 
-    // ==========================================
-    // DEPOSIT
-    // ==========================================
+
 
     @Test
     void deposit_Success_Admin() throws Exception {
@@ -224,9 +222,7 @@ public class TransactionControllerTest {
     }
 
 
-    // ==========================================
-    // WITHDRAWAL
-    // ==========================================
+
 
     @Test
     void withdrawal_Success() throws Exception {
@@ -263,9 +259,7 @@ public class TransactionControllerTest {
                 .andExpect(jsonPath("$.message").exists());
     }
 
-    // ==========================================
-    // GET QUERIES
-    // ==========================================
+
 
     @Test
     void getTransactions_Admin_Success() throws Exception {
