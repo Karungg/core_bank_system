@@ -1,8 +1,7 @@
 package com.miftah.core_bank_system.exception;
 
-import lombok.Getter;
-
 import java.util.Map;
+import lombok.Getter;
 
 @Getter
 public class DuplicateResourceException extends RuntimeException {

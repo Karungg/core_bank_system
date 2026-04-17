@@ -1,9 +1,10 @@
 package com.miftah.core_bank_system.notification.event;
 
-import com.miftah.core_bank_system.account.AccountStatus;
+import java.util.UUID;
+
 import lombok.Getter;
 
-import java.util.UUID;
+import com.miftah.core_bank_system.account.AccountStatus;
 
 @Getter
 public class AccountStatusChangedEvent extends BankEvent {

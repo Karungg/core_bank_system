@@ -1,10 +1,11 @@
 package com.miftah.core_bank_system.notification.event;
 
-import com.miftah.core_bank_system.transaction.TransactionType;
-import lombok.Getter;
-
 import java.math.BigDecimal;
 import java.util.UUID;
+
+import lombok.Getter;
+
+import com.miftah.core_bank_system.transaction.TransactionType;
 
 @Getter
 public class TransactionCompletedEvent extends BankEvent {

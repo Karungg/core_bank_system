@@ -1,8 +1,9 @@
 package com.miftah.core_bank_system.notification.event;
 
-import lombok.Getter;
 import java.time.Instant;
 import java.util.UUID;
+
+import lombok.Getter;
 
 @Getter
 public abstract class BankEvent {

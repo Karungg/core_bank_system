@@ -1,16 +1,21 @@
 package com.miftah.core_bank_system.notification;
 
-import com.miftah.core_bank_system.notification.event.*;
-import com.miftah.core_bank_system.user.User;
-import com.miftah.core_bank_system.user.UserRepository;
+import java.util.UUID;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.UUID;
+import com.miftah.core_bank_system.notification.event.AccountStatusChangedEvent;
+import com.miftah.core_bank_system.notification.event.LoginEvent;
+import com.miftah.core_bank_system.notification.event.PinChangedEvent;
+import com.miftah.core_bank_system.notification.event.TransactionCompletedEvent;
+import com.miftah.core_bank_system.user.User;
+import com.miftah.core_bank_system.user.UserRepository;
 
 @Component
 @RequiredArgsConstructor

@@ -1,8 +1,8 @@
 package com.miftah.core_bank_system.notification.event;
 
-import lombok.Getter;
-
 import java.util.UUID;
+
+import lombok.Getter;
 
 @Getter
 public class LoginEvent extends BankEvent {
