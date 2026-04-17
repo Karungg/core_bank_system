@@ -1,8 +1,10 @@
 package com.miftah.core_bank_system.profile;
 
-import com.miftah.core_bank_system.exception.DuplicateResourceException;
-import com.miftah.core_bank_system.exception.ResourceNotFoundException;
-import com.miftah.core_bank_system.user.User;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -14,9 +16,9 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
-import java.time.LocalDate;
-import java.util.Optional;
-import java.util.UUID;
+import com.miftah.core_bank_system.exception.DuplicateResourceException;
+import com.miftah.core_bank_system.exception.ResourceNotFoundException;
+import com.miftah.core_bank_system.user.User;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -63,9 +65,7 @@ class ProfileServiceTest {
                 .build();
     }
 
-    // ==========================================
-    // create
-    // ==========================================
+
 
     @Test
     void create_Success() {
@@ -145,9 +145,7 @@ class ProfileServiceTest {
         verify(profileRepository, never()).save(any());
     }
 
-    // ==========================================
-    // get (by currently authenticated user)
-    // ==========================================
+
 
     @Test
     void get_Success() {
@@ -170,9 +168,7 @@ class ProfileServiceTest {
         assertEquals("userId", exception.getFieldName());
     }
 
-    // ==========================================
-    // update
-    // ==========================================
+
 
     @Test
     void update_Success() {
@@ -226,15 +222,13 @@ class ProfileServiceTest {
         verify(profileRepository, never()).save(any());
     }
 
-    // ==========================================
-    // getAll
-    // ==========================================
+
 
     @Test
     void getAll_Success() {
         Pageable pageable = PageRequest.of(0, 10);
         Page<Profile> page = new PageImpl<>(
-                java.util.List.of(profile));
+                List.of(profile));
 
         when(profileRepository.findAll(pageable)).thenReturn(page);
 
@@ -248,7 +242,7 @@ class ProfileServiceTest {
     @Test
     void getAll_Empty_ReturnsEmptyPage() {
         Pageable pageable = PageRequest.of(0, 10);
-        Page<Profile> page = new PageImpl<>(java.util.List.of());
+        Page<Profile> page = new PageImpl<>(List.of());
 
         when(profileRepository.findAll(pageable)).thenReturn(page);
 
@@ -259,9 +253,7 @@ class ProfileServiceTest {
         assertTrue(response.getContent().isEmpty());
     }
 
-    // ==========================================
-    // getById
-    // ==========================================
+
 
     @Test
     void getById_Success() {
