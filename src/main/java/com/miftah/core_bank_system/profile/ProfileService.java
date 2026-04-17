@@ -1,10 +1,11 @@
 package com.miftah.core_bank_system.profile;
 
-import com.miftah.core_bank_system.user.User;
+import java.util.UUID;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
-import java.util.UUID;
+import com.miftah.core_bank_system.user.User;
 
 public interface ProfileService {
     ProfileResponse create(User user, ProfileRequest request);
