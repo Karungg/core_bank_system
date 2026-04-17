@@ -1,10 +1,11 @@
 package com.miftah.core_bank_system.user;
 
-import com.miftah.core_bank_system.auth.RegisterRequest;
 import java.util.UUID;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+
+import com.miftah.core_bank_system.auth.RegisterRequest;
 
 public interface UserService {
 

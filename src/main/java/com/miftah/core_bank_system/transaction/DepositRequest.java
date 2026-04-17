@@ -16,7 +16,7 @@ import java.util.UUID;
 @Builder
 public class DepositRequest {
 
-    @NotNull(message = "{validation.account.userId.required}") // reusing appropriate message or adding new
+    @NotNull(message = "{validation.account.userId.required}")
     private UUID accountId;
 
     @NotNull(message = "{validation.transaction.amount.required}")

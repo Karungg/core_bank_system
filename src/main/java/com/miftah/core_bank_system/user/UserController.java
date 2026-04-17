@@ -1,10 +1,11 @@
 package com.miftah.core_bank_system.user;
 
-import com.miftah.core_bank_system.auth.RegisterRequest;
-import com.miftah.core_bank_system.dto.WebResponse;
-import jakarta.validation.Valid;
 import java.util.UUID;
+
+import jakarta.validation.Valid;
+
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.data.domain.Page;
@@ -21,6 +22,9 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import com.miftah.core_bank_system.auth.RegisterRequest;
+import com.miftah.core_bank_system.dto.WebResponse;
 
 @RestController
 @RequestMapping("/api/v1/users")

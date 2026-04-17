@@ -1,9 +1,7 @@
 package com.miftah.core_bank_system.user;
 
-import com.miftah.core_bank_system.auth.RegisterRequest;
-import com.miftah.core_bank_system.exception.DuplicateResourceException;
-import com.miftah.core_bank_system.exception.ResourceNotFoundException;
-import com.miftah.core_bank_system.profile.ProfileService;
+import java.util.UUID;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -13,7 +11,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.UUID;
+import com.miftah.core_bank_system.auth.RegisterRequest;
+import com.miftah.core_bank_system.exception.DuplicateResourceException;
+import com.miftah.core_bank_system.exception.ResourceNotFoundException;
+import com.miftah.core_bank_system.profile.ProfileService;
 
 @Service
 @RequiredArgsConstructor
@@ -92,7 +93,7 @@ public class UserServiceImpl implements UserService {
         log.info("Admin user deleted successfully: {}", id);
     }
 
-    // ========== Private Helpers ==========
+
 
     private UserResponse createUserWithRole(RegisterRequest request, Role role) {
         log.info("Creating {} user: {}", role, request.getUsername());
