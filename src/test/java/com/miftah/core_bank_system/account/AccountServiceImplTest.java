@@ -1,7 +1,15 @@
 package com.miftah.core_bank_system.account;
 
+import com.miftah.core_bank_system.audit.AuditAction;
+import com.miftah.core_bank_system.audit.AuditService;
 import com.miftah.core_bank_system.config.EncryptionUtil;
-import com.miftah.core_bank_system.exception.*;
+import com.miftah.core_bank_system.exception.AccountLockedException;
+import com.miftah.core_bank_system.exception.AccountNotActiveException;
+import com.miftah.core_bank_system.exception.InvalidPinException;
+import com.miftah.core_bank_system.exception.InvalidStatusTransitionException;
+import com.miftah.core_bank_system.exception.ResourceNotFoundException;
+import com.miftah.core_bank_system.exception.SamePinException;
+import com.miftah.core_bank_system.exception.PinMismatchException;
 import com.miftah.core_bank_system.notification.event.AccountStatusChangedEvent;
 import com.miftah.core_bank_system.notification.event.PinChangedEvent;
 import com.miftah.core_bank_system.transaction.Transaction;
@@ -9,8 +17,6 @@ import com.miftah.core_bank_system.transaction.TransactionRepository;
 import com.miftah.core_bank_system.transaction.TransactionType;
 import com.miftah.core_bank_system.user.User;
 import com.miftah.core_bank_system.user.UserRepository;
-import com.miftah.core_bank_system.audit.AuditService;
-import com.miftah.core_bank_system.audit.AuditAction;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -33,11 +39,19 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class AccountServiceImplTest {

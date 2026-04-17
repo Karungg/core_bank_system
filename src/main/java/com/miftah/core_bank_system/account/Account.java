@@ -26,6 +26,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.UUID;
 
@@ -79,10 +80,10 @@ public class Account {
     private Integer failedPinAttempts = 0;
 
     @Column(name = "pin_locked_until")
-    private java.time.Instant pinLockedUntil;
+    private Instant pinLockedUntil;
 
     @Column(name = "pin_changed_at")
-    private java.time.Instant pinChangedAt;
+    private Instant pinChangedAt;
 
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)

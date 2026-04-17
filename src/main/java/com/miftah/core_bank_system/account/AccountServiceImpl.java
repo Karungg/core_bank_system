@@ -1,36 +1,38 @@
 package com.miftah.core_bank_system.account;
 
-import com.miftah.core_bank_system.config.EncryptionUtil;
-import com.miftah.core_bank_system.exception.ResourceNotFoundException;
-import com.miftah.core_bank_system.exception.PinMismatchException;
-import com.miftah.core_bank_system.exception.SamePinException;
-import com.miftah.core_bank_system.exception.InvalidPinException;
-import com.miftah.core_bank_system.user.User;
-import com.miftah.core_bank_system.user.UserRepository;
-import com.miftah.core_bank_system.audit.AuditService;
 import com.miftah.core_bank_system.audit.AuditAction;
+import com.miftah.core_bank_system.audit.AuditService;
+import com.miftah.core_bank_system.config.EncryptionUtil;
+import com.miftah.core_bank_system.exception.AccountLockedException;
+import com.miftah.core_bank_system.exception.AccountNotActiveException;
+import com.miftah.core_bank_system.exception.InvalidPinException;
+import com.miftah.core_bank_system.exception.InvalidStatusTransitionException;
+import com.miftah.core_bank_system.exception.PinMismatchException;
+import com.miftah.core_bank_system.exception.ResourceNotFoundException;
+import com.miftah.core_bank_system.exception.SamePinException;
 import com.miftah.core_bank_system.notification.event.AccountStatusChangedEvent;
 import com.miftah.core_bank_system.notification.event.PinChangedEvent;
-import org.springframework.context.ApplicationEventPublisher;
-
 import com.miftah.core_bank_system.transaction.Transaction;
 import com.miftah.core_bank_system.transaction.TransactionRepository;
 import com.miftah.core_bank_system.transaction.TransactionType;
-
+import com.miftah.core_bank_system.user.User;
+import com.miftah.core_bank_system.user.UserRepository;
 import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -230,7 +232,7 @@ public class AccountServiceImpl implements AccountService {
         AccountStatus newStatus = request.getStatus();
 
         if (currentStatus == AccountStatus.CLOSED) {
-            throw new com.miftah.core_bank_system.exception.InvalidStatusTransitionException("Cannot change status of a CLOSED account");
+            throw new InvalidStatusTransitionException("Cannot change status of a CLOSED account");
         }
 
         boolean validTransition = false;
@@ -251,7 +253,7 @@ public class AccountServiceImpl implements AccountService {
         }
 
         if (!validTransition && currentStatus != newStatus) {
-            throw new com.miftah.core_bank_system.exception.InvalidStatusTransitionException("Invalid transition from " + currentStatus + " to " + newStatus);
+            throw new InvalidStatusTransitionException("Invalid transition from " + currentStatus + " to " + newStatus);
         }
 
         account.setStatus(newStatus);
@@ -273,21 +275,21 @@ public class AccountServiceImpl implements AccountService {
                 .orElseThrow(() -> new ResourceNotFoundException("Account", "id", accountId));
 
         if (account.getStatus() != AccountStatus.ACTIVE) {
-            throw new com.miftah.core_bank_system.exception.AccountNotActiveException("Account is " + account.getStatus());
+            throw new AccountNotActiveException("Account is " + account.getStatus());
         }
 
-        if (account.getPinLockedUntil() != null && account.getPinLockedUntil().isAfter(java.time.Instant.now())) {
-            throw new com.miftah.core_bank_system.exception.AccountLockedException("Account PIN is locked until: " + account.getPinLockedUntil());
+        if (account.getPinLockedUntil() != null && account.getPinLockedUntil().isAfter(Instant.now())) {
+            throw new AccountLockedException("Account PIN is locked until: " + account.getPinLockedUntil());
         }
 
-        if (account.getPinChangedAt() != null && account.getPinChangedAt().isAfter(java.time.Instant.now().minus(24, java.time.temporal.ChronoUnit.HOURS))) {
+        if (account.getPinChangedAt() != null && account.getPinChangedAt().isAfter(Instant.now().minus(24, ChronoUnit.HOURS))) {
             throw new RuntimeException("error.pin.cooldown");
         }
 
         if (!passwordEncoder.matches(request.getOldPin(), account.getPin())) {
             account.setFailedPinAttempts(account.getFailedPinAttempts() + 1);
             if (account.getFailedPinAttempts() >= 5) {
-                account.setPinLockedUntil(java.time.Instant.now().plus(30, java.time.temporal.ChronoUnit.MINUTES));
+                account.setPinLockedUntil(Instant.now().plus(30, ChronoUnit.MINUTES));
                 account.setFailedPinAttempts(0);
             }
             accountRepository.save(account);
@@ -305,7 +307,7 @@ public class AccountServiceImpl implements AccountService {
         account.setFailedPinAttempts(0);
         account.setPinLockedUntil(null);
         account.setPin(passwordEncoder.encode(request.getNewPin()));
-        account.setPinChangedAt(java.time.Instant.now());
+        account.setPinChangedAt(Instant.now());
 
         accountRepository.save(account);
 
