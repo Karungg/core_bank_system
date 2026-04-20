@@ -131,19 +131,20 @@ class AuthServiceTest {
     }
 
     @Test
-    void login_UserNotFound_ShouldThrowResourceNotFoundException() {
+    void login_UserNotFound_ShouldThrowBadCredentialsException() {
         when(userRepository.findByUsername(loginRequest.getUsername())).thenReturn(Optional.empty());
+        when(authenticationManager.authenticate(any())).thenThrow(new BadCredentialsException("Bad credentials"));
 
-        assertThrows(ResourceNotFoundException.class, () -> authService.login(loginRequest));
-        verify(authenticationManager, never()).authenticate(any());
+        assertThrows(BadCredentialsException.class, () -> authService.login(loginRequest));
+        verify(authenticationManager).authenticate(any());
     }
 
     @Test
-    void login_AccountLocked_ShouldThrowAccountLockedException() {
+    void login_AccountLocked_ShouldThrowBadCredentialsException() {
         user.setLoginLockedUntil(Instant.now().plus(10, ChronoUnit.MINUTES));
         when(userRepository.findByUsername(loginRequest.getUsername())).thenReturn(Optional.of(user));
 
-        assertThrows(AccountLockedException.class, () -> authService.login(loginRequest));
+        assertThrows(BadCredentialsException.class, () -> authService.login(loginRequest));
         verify(authenticationManager, never()).authenticate(any());
     }
 

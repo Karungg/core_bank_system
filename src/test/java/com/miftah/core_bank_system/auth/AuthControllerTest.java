@@ -192,7 +192,7 @@ class AuthControllerTest {
     }
 
     @Test
-    void login_UserNotFound_ShouldReturnNotFound() throws Exception {
+    void login_UserNotFound_ShouldReturnUnauthorized() throws Exception {
         LoginRequest loginRequest = LoginRequest.builder()
                 .username("nonexistent")
                 .password("password123")
@@ -201,7 +201,9 @@ class AuthControllerTest {
         mockMvc.perform(post("/api/v1/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(loginRequest)))
-            .andExpect(status().isNotFound());
+            .andExpect(status().isUnauthorized())
+            .andExpect(jsonPath("$.code").value(401))
+            .andExpect(jsonPath("$.message").value(getMessage("error.bad-credentials")));
     }
 
     @Test
