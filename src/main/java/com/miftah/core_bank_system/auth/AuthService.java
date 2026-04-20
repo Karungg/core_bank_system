@@ -21,6 +21,12 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import java.time.Instant;
+import java.util.Optional;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.AuthenticationException;
+
+import java.time.temporal.ChronoUnit;
 
 @Service
 @RequiredArgsConstructor
@@ -72,47 +78,55 @@ public class AuthService {
     public TokenResponse login(LoginRequest request) {
         log.info("Logging in user: {}", request.getUsername());
 
-        User user = userRepository.findByUsername(request.getUsername())
-                .orElseThrow(() -> new ResourceNotFoundException("User", "username", request.getUsername()));
-
-        if (user.getLoginLockedUntil() != null && user.getLoginLockedUntil().isAfter(java.time.Instant.now())) {
-            throw new com.miftah.core_bank_system.exception.AccountLockedException("Account login is locked until: " + user.getLoginLockedUntil());
-        }
+        Optional<User> userOptional = userRepository.findByUsername(request.getUsername());
 
         try {
+            if (userOptional.isPresent()) {
+                User user = userOptional.get();
+                if (user.getLoginLockedUntil() != null && user.getLoginLockedUntil().isAfter(Instant.now())) {
+                    throw new BadCredentialsException("error.bad-credentials");
+                }
+            }
+
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
                             request.getUsername(),
                             request.getPassword()));
-        } catch (org.springframework.security.core.AuthenticationException e) {
-            user.setFailedLoginAttempts(user.getFailedLoginAttempts() + 1);
-            if (user.getFailedLoginAttempts() >= 5) {
-                user.setLoginLockedUntil(java.time.Instant.now().plus(15, java.time.temporal.ChronoUnit.MINUTES));
-                user.setFailedLoginAttempts(0);
-            }
+
+            User user = userOptional.orElseThrow(() -> new BadCredentialsException("error.bad-credentials"));
+
+            user.setFailedLoginAttempts(0);
+            user.setLoginLockedUntil(null);
             userRepository.save(user);
-            applicationEventPublisher.publishEvent(new LoginEvent(user.getId(), user.getUsername(), "unknown", false));
-            throw e;
+
+            log.info("User logged in successfully: {}", request.getUsername());
+            auditService.logAction(user, AuditAction.LOGIN, "User logged in successfully");
+
+            applicationEventPublisher.publishEvent(new LoginEvent(user.getId(), user.getUsername(), "unknown", true));
+
+            UserDetails userDetails = userDetailsService.loadUserByUsername(request.getUsername());
+            String jwtToken = jwtService.generateToken(userDetails);
+            
+            RefreshToken refreshToken = refreshTokenService.createRefreshToken(user.getId());
+
+            return TokenResponse.builder()
+                    .token(jwtToken)
+                    .refreshToken(refreshToken.getToken())
+                    .build();
+
+        } catch (AuthenticationException e) {
+            userOptional.ifPresent(user -> {
+                user.setFailedLoginAttempts(user.getFailedLoginAttempts() + 1);
+                if (user.getFailedLoginAttempts() >= 5) {
+                    user.setLoginLockedUntil(Instant.now().plus(15, ChronoUnit.MINUTES));
+                    user.setFailedLoginAttempts(0);
+                }
+                userRepository.save(user);
+                applicationEventPublisher.publishEvent(new LoginEvent(user.getId(), user.getUsername(), "unknown", false));
+            });
+
+            throw new BadCredentialsException("error.bad-credentials");
         }
-
-        user.setFailedLoginAttempts(0);
-        user.setLoginLockedUntil(null);
-        userRepository.save(user);
-
-        UserDetails userDetails = userDetailsService.loadUserByUsername(request.getUsername());
-        String jwtToken = jwtService.generateToken(userDetails);
-        
-        RefreshToken refreshToken = refreshTokenService.createRefreshToken(user.getId());
-
-        log.info("User logged in successfully: {}", request.getUsername());
-        auditService.logAction(user, AuditAction.LOGIN, "User logged in successfully");
-
-        applicationEventPublisher.publishEvent(new LoginEvent(user.getId(), user.getUsername(), "unknown", true));
-
-        return TokenResponse.builder()
-                .token(jwtToken)
-                .refreshToken(refreshToken.getToken())
-                .build();
     }
 
     @Transactional
