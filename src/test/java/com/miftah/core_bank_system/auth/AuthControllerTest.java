@@ -246,10 +246,10 @@ class AuthControllerTest {
     }
 
     @Test
-    void me_InvalidToken_ShouldReturnForbidden() throws Exception {
+    void me_InvalidToken_ShouldReturnUnauthorized() throws Exception {
         mockMvc.perform(get("/api/v1/auth/me")
                 .header("Authorization", "Bearer invalid-jwt-token"))
-            .andExpect(status().isForbidden());
+            .andExpect(status().isUnauthorized());
     }
 
 
