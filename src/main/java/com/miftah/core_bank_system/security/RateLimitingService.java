@@ -4,6 +4,7 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import io.github.bucket4j.Bandwidth;
@@ -13,13 +14,13 @@ import io.github.bucket4j.Refill;
 @Service
 public class RateLimitingService {
 
-    @org.springframework.beans.factory.annotation.Value("${application.security.rate-limit.login:10}")
+    @Value("${application.security.rate-limit.login:10}")
     private int loginLimit;
 
-    @org.springframework.beans.factory.annotation.Value("${application.security.rate-limit.register:3}")
+    @Value("${application.security.rate-limit.register:3}")
     private int registerLimit;
 
-    @org.springframework.beans.factory.annotation.Value("${application.security.rate-limit.refresh:10}")
+    @Value("${application.security.rate-limit.refresh:10}")
     private int refreshLimit;
 
     private final Map<String, Bucket> loginBuckets = new ConcurrentHashMap<>();
