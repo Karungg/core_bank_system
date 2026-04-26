@@ -69,7 +69,7 @@ public class UserControllerTest {
         // Create an admin user manually & login
         RegisterRequest adminReg = RegisterRequest.builder()
                 .username("adminuser")
-                .password("password")
+                .password("Pass@123")
                 .build();
         authService.register(adminReg);
 
@@ -79,7 +79,7 @@ public class UserControllerTest {
 
         adminToken = authService.login(LoginRequest.builder()
                 .username("adminuser")
-                .password("password")
+                .password("Pass@123")
                 .build()).getToken();
     }
 
@@ -102,7 +102,7 @@ public class UserControllerTest {
     void createAdmin_Success_ShouldReturnCreated() throws Exception {
         RegisterRequest request = RegisterRequest.builder()
                 .username("newadmin")
-                .password("password")
+                .password("Pass@123")
                 .build();
 
         mockMvc.perform(post("/api/v1/users/admin")
@@ -122,7 +122,7 @@ public class UserControllerTest {
     void createAdmin_DuplicateUsername_ShouldReturnBadRequest() throws Exception {
         RegisterRequest request = RegisterRequest.builder()
                 .username("adminuser") // already created in setup
-                .password("password")
+                .password("Pass@123")
                 .build();
 
         mockMvc.perform(post("/api/v1/users/admin")
@@ -139,7 +139,7 @@ public class UserControllerTest {
     void createUser_Success_ShouldReturnCreated() throws Exception {
         RegisterRequest request = RegisterRequest.builder()
                 .username("regularuser")
-                .password("password")
+                .password("Pass@123")
                 .build();
 
         mockMvc.perform(post("/api/v1/users")
@@ -159,7 +159,7 @@ public class UserControllerTest {
     void createUser_DuplicateUsername_ShouldReturnBadRequest() throws Exception {
         RegisterRequest request = RegisterRequest.builder()
                 .username("adminuser") // already exists
-                .password("password")
+                .password("Pass@123")
                 .build();
 
         mockMvc.perform(post("/api/v1/users")
@@ -174,7 +174,7 @@ public class UserControllerTest {
     @Test
     void createUserWithProfile_Success_ShouldReturnCreated() throws Exception {
         CreateUserWithProfileRequest request = CreateUserWithProfileRequest.builder()
-                .user(RegisterRequest.builder().username("newuser").password("password").build())
+                .user(RegisterRequest.builder().username("newuser").password("Pass@123").build())
                 .profile(createValidProfileRequest())
                 .build();
 
@@ -194,12 +194,12 @@ public class UserControllerTest {
     @Test
     void updateUser_Success_ShouldReturnOk() throws Exception {
         // Create standard user via auth service
-        authService.register(RegisterRequest.builder().username("olduser").password("password").build());
+        authService.register(RegisterRequest.builder().username("olduser").password("Pass@123").build());
         User user = userRepository.findByUsername("olduser").orElseThrow();
 
         UpdateUserRequest request = UpdateUserRequest.builder()
                 .username("updateduser")
-                .password("newpassword")
+                .password("Pass@123")
                 .build();
 
         mockMvc.perform(put("/api/v1/users/" + user.getId())
@@ -219,7 +219,7 @@ public class UserControllerTest {
     void updateAdmin_Success_ShouldReturnOk() throws Exception {
         UpdateUserRequest request = UpdateUserRequest.builder()
                 .username("superadmin")
-                .password("newpassword")
+                .password("Pass@123")
                 .build();
 
         User adminUser = userRepository.findByUsername("adminuser").orElseThrow();
@@ -240,7 +240,7 @@ public class UserControllerTest {
     @Test
     void deleteAdmin_Success_ShouldReturnOk() throws Exception {
         // create dummy admin to delete
-        authService.register(RegisterRequest.builder().username("deleteadmin").password("pwd").build());
+        authService.register(RegisterRequest.builder().username("deleteadmin").password("Pass@123").build());
         User dummyAdmin = userRepository.findByUsername("deleteadmin").orElseThrow();
 
         mockMvc.perform(delete("/api/v1/users/admin/" + dummyAdmin.getId())
@@ -254,8 +254,8 @@ public class UserControllerTest {
 
     @Test
     void getAll_Success_ShouldReturnOk() throws Exception {
-        authService.register(RegisterRequest.builder().username("user1").password("pwd").build());
-        authService.register(RegisterRequest.builder().username("user2").password("pwd").build());
+        authService.register(RegisterRequest.builder().username("user1").password("Pass@123").build());
+        authService.register(RegisterRequest.builder().username("user2").password("Pass@123").build());
 
         mockMvc.perform(get("/api/v1/users")
                 .header("Authorization", "Bearer " + adminToken)
@@ -269,7 +269,7 @@ public class UserControllerTest {
 
     @Test
     void getById_Success_ShouldReturnOk() throws Exception {
-        authService.register(RegisterRequest.builder().username("targetuser").password("pwd").build());
+        authService.register(RegisterRequest.builder().username("targetuser").password("Pass@123").build());
         User target = userRepository.findByUsername("targetuser").orElseThrow();
 
         mockMvc.perform(get("/api/v1/users/" + target.getId())

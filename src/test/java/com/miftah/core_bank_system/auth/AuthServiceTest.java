@@ -67,8 +67,8 @@ class AuthServiceTest {
 
     @BeforeEach
     void setUp() {
-        registerRequest = new RegisterRequest("miftah", "password123");
-        loginRequest = new LoginRequest("miftah", "password123");
+        registerRequest = new RegisterRequest("miftah", "Pass@123");
+        loginRequest = new LoginRequest("miftah", "Pass@123");
 
         user = User.builder()
                 .id(UUID.randomUUID())
