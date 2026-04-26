@@ -18,7 +18,6 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
 import com.miftah.core_bank_system.TestcontainersConfiguration;
-import com.miftah.core_bank_system.user.UserRepository;
 
 import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -32,9 +31,6 @@ class AuthControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
-
-    @Autowired
-    private UserRepository userRepository;
 
     @Autowired
     private AuthService authService;
@@ -100,7 +96,7 @@ class AuthControllerTest {
     void register_Success_ShouldReturnCreated() throws Exception {
         RegisterRequest request = RegisterRequest.builder()
                 .username("testuser")
-                .password("password123")
+                .password("Pass@123")
                 .build();
 
         mockMvc.perform(post("/api/v1/auth/register")
@@ -134,7 +130,7 @@ class AuthControllerTest {
     void register_DuplicateUsername_ShouldReturnBadRequest() throws Exception {
         RegisterRequest request = RegisterRequest.builder()
                 .username("existinguser")
-                .password("password123")
+                .password("Pass@123")
                 .build();
 
         // Register first
@@ -157,11 +153,11 @@ class AuthControllerTest {
 
     @Test
     void login_Success_ShouldReturnTokens() throws Exception {
-        registerUser("testlogin", "password123");
+        registerUser("testlogin", "Pass@123");
 
         LoginRequest loginRequest = LoginRequest.builder()
                 .username("testlogin")
-                .password("password123")
+                .password("Pass@123")
                 .build();
 
         mockMvc.perform(post("/api/v1/auth/login")
@@ -176,7 +172,7 @@ class AuthControllerTest {
 
     @Test
     void login_BadCredentials_ShouldReturnUnauthorized() throws Exception {
-        registerUser("testbadcreds", "password123");
+        registerUser("testbadcreds", "Pass@123");
 
         LoginRequest loginRequest = LoginRequest.builder()
                 .username("testbadcreds")
@@ -195,7 +191,7 @@ class AuthControllerTest {
     void login_UserNotFound_ShouldReturnUnauthorized() throws Exception {
         LoginRequest loginRequest = LoginRequest.builder()
                 .username("nonexistent")
-                .password("password123")
+                .password("Pass@123")
                 .build();
 
         mockMvc.perform(post("/api/v1/auth/login")
@@ -226,8 +222,8 @@ class AuthControllerTest {
 
     @Test
     void me_Success_ShouldReturnUserDetails() throws Exception {
-        registerUser("testme", "password123");
-        String token = loginAndGetToken("testme", "password123");
+        registerUser("testme", "Pass@123");
+        String token = loginAndGetToken("testme", "Pass@123");
 
         mockMvc.perform(get("/api/v1/auth/me")
                 .header("Authorization", "Bearer " + token))
@@ -256,8 +252,8 @@ class AuthControllerTest {
 
     @Test
     void refreshToken_Success_ShouldReturnNewTokens() throws Exception {
-        registerUser("testrefresh", "password123");
-        String refreshToken = loginAndGetRefreshToken("testrefresh", "password123");
+        registerUser("testrefresh", "Pass@123");
+        String refreshToken = loginAndGetRefreshToken("testrefresh", "Pass@123");
 
         TokenRefreshRequest refreshRequest = TokenRefreshRequest.builder()
                 .refreshToken(refreshToken)
@@ -290,8 +286,8 @@ class AuthControllerTest {
 
     @Test
     void refreshToken_UsedToken_ShouldReturnForbidden() throws Exception {
-        registerUser("testusedtoken", "password123");
-        String refreshToken = loginAndGetRefreshToken("testusedtoken", "password123");
+        registerUser("testusedtoken", "Pass@123");
+        String refreshToken = loginAndGetRefreshToken("testusedtoken", "Pass@123");
 
         TokenRefreshRequest refreshRequest = TokenRefreshRequest.builder()
                 .refreshToken(refreshToken)
@@ -314,8 +310,8 @@ class AuthControllerTest {
 
     @Test
     void logout_Success_ShouldReturnOk() throws Exception {
-        registerUser("testlogout", "password123");
-        String refreshToken = loginAndGetRefreshToken("testlogout", "password123");
+        registerUser("testlogout", "Pass@123");
+        String refreshToken = loginAndGetRefreshToken("testlogout", "Pass@123");
 
         TokenRefreshRequest logoutRequest = TokenRefreshRequest.builder()
                 .refreshToken(refreshToken)
