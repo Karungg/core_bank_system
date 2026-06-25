@@ -220,9 +220,9 @@
 				<artifactId>flyway-maven-plugin</artifactId>
 				<version>${flyway.version}</version>
 				<configuration>
-					<user>${flyway.user}</user>
-					<password>${flyway.password}</password>
-					<url>${flyway.url}</url>
+					<configFiles>
+						<configFile>${project.basedir}/.env</configFile>
+					</configFiles>
 				</configuration>
 			</plugin>
 		</plugins>
