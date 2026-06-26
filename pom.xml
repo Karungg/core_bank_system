@@ -97,7 +97,7 @@
 		<dependency>
 			<groupId>org.springdoc</groupId>
 			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-			<version>3.0.1</version>
+			<version>3.0.3</version>
 			<scope>compile</scope>
 		</dependency>
 
@@ -124,7 +124,7 @@
 		<dependency>
 			<groupId>tools.jackson.core</groupId>
 			<artifactId>jackson-databind</artifactId>
-			<version>3.0.3</version>
+			<version>3.2.0</version>
 			<scope>compile</scope>
 		</dependency>
 
@@ -134,7 +134,7 @@
 		<dependency>
 			<groupId>com.bucket4j</groupId>
 			<artifactId>bucket4j_jdk17-core</artifactId>
-			<version>8.18.0</version>
+			<version>8.19.0</version>
 			<scope>compile</scope>
 		</dependency>
 
